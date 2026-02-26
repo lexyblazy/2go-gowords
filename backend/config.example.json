@@ -1,0 +1,19 @@
+{
+  "server": {
+    "port": 8080
+  },
+  "lobby": {
+    "roomCount": 1,
+    "maxPlayersPerRoom": 100
+  },
+  "game": {
+    "timeLimit": 60,
+    "roundIntervalSeconds": 20,
+    "wordLength": 6,
+    "wordCount": 2,
+    "distinctCharacterCount": 10
+  },
+  "dictionary": {
+    "filePath": "wl.txt"
+  }
+}
