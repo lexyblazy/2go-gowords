@@ -1,3 +1,4 @@
 backend/bin
 backend/config.json
 .DS_Store
+*/.DS_Store
