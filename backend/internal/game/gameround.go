@@ -3,11 +3,9 @@ package game
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/lexyblazy/gowords/internal/dictionary"
 	"github.com/lexyblazy/gowords/internal/events"
+	"strings"
 )
 
 type Submission struct {
@@ -24,11 +22,12 @@ type GameRound struct {
 	scores                  map[string]int
 
 	submissionChan chan *Submission
-	emitEvent         func(event events.EnrichableEvent)
+	emitEvent      func(event events.EnrichableEvent)
 }
 
-func (gr *GameRound) makeWordRejectedEvent(message string, playerId string, word string)  {
+func (gr *GameRound) makeWordRejectedEvent(message string, playerId string, word string) {
 	var event events.PlayerWordRejectedEvent
+	event.Type = events.PlayerWordRejected
 	event.Payload.Message = message
 	event.Payload.PlayerId = playerId
 	event.Payload.Word = word
@@ -50,8 +49,8 @@ func (gr *GameRound) handleSubmission(ctx context.Context, s *Submission) {
 	length := strings.Split(word, " ")
 	if len(length) > 1 {
 		gr.makeWordRejectedEvent("Multiple words are not allowed", playerId, word)
-		return 
-		
+		return
+
 	}
 	word = strings.ToLower(strings.TrimSpace(word))
 
@@ -78,13 +77,12 @@ func (gr *GameRound) handleSubmission(ctx context.Context, s *Submission) {
 
 }
 
-
-
 func (gr *GameRound) AwardPoints(word string, playerId string) {
 	points := len(word) - 2
 	gr.scores[playerId] += points
 
 	var event events.PlayerWordAcceptedEvent
+	event.Type = events.PlayerWordAccepted
 	event.Payload.Word = word
 	event.Payload.Points = points
 	event.Payload.PlayerId = playerId
@@ -92,9 +90,9 @@ func (gr *GameRound) AwardPoints(word string, playerId string) {
 
 	// send the players submission to the general channel excluding the player
 	var playerSubmissionEvent events.PlayerSubmissionBroadcastEvent
+	playerSubmissionEvent.Type = events.PlayerSubmissionBroadcast
 	playerSubmissionEvent.Payload.Word = word
 	playerSubmissionEvent.Payload.PlayerId = playerId
-	playerSubmissionEvent.Payload.Timestamp = time.Now().Unix()
 	gr.emitEvent(&playerSubmissionEvent)
 
 }
@@ -113,8 +111,8 @@ func (gr *GameRound) ReportScores() {
 		// send each player their score
 		if score > 0 {
 			var event events.PlayerRoundScoresEvent
+			event.Type = events.PlayerRoundScores
 			event.Payload.Score = score
-			event.Payload.Timestamp = time.Now().Unix()
 			event.Payload.PlayerId = playerId
 			gr.emitEvent(&event)
 		}
@@ -122,9 +120,9 @@ func (gr *GameRound) ReportScores() {
 
 	if winningScore > 0 {
 		var event events.RoundWinnerEvent
+		event.Type = events.RoundWinner
 		event.Payload.PlayerId = winningPlayerId
 		event.Payload.Score = winningScore
-		event.Payload.Timestamp = time.Now().Unix()
 		gr.emitEvent(&event)
 	}
 

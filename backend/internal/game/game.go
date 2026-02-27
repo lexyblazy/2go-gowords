@@ -125,6 +125,7 @@ func (gs *GameState) Run() {
 		gs.PlayCurrentRound(timeLimit)
 
 		var event events.RoundOverEvent
+		event.Type = events.RoundOver
 		event.Payload.Message = "The round is over"
 		gs.emitEvent(&event)
 
@@ -132,6 +133,7 @@ func (gs *GameState) Run() {
 		gs.currentRound = nil
 
 		var nxtRoundCntDwn events.NextRoundCountdownEvent
+		nxtRoundCntDwn.Type = events.NextRoundCountdown
 		nxtRoundCntDwn.Payload.RoundIntervalSeconds = gs.c.Game.RoundIntervalSeconds
 		gs.emitEvent(&nxtRoundCntDwn)
 		// Sleep for the round interval before starting a new round
@@ -160,6 +162,7 @@ func (gs *GameState) PrintRound(ctx context.Context) {
 		}
 
 		var event events.RoundInfoEvent
+		event.Type = events.RoundInfo
 		event.Payload.Words = words
 		event.Payload.ValidWordsCount = len(gs.currentRound.validWords)
 		gs.emitEvent(&event)
@@ -179,6 +182,7 @@ During the last 30 seconds of the round, a two letter word will be added to expa
 Happy Guessing!`
 
 	var event events.GameRulesEvent
+	event.Type = events.GameRules
 	event.Payload.Message = rules
 
 	gs.emitEvent(&event)

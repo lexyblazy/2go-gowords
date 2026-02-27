@@ -1,8 +1,6 @@
 package events
 
 import (
-	"encoding/json"
-	"log"
 	"time"
 )
 
@@ -35,32 +33,12 @@ const (
 	PlayerSubmissionBroadcast EventType = "PLAYER_SUBMISSION_BROADCAST"
 )
 
-type EnrichableEvent interface {
-	GetType() EventType
-	GetDestination() EventDestination
-	GetPlayerID() string
-	Enrich(moniker string)
-}
-
 type JoinRoomRequest struct {
 	Type    EventType `json:"type"`
 	Payload struct {
 		Moniker   string `json:"moniker"`
 		Timestamp int64  `json:"timestamp"`
 	} `json:"payload"`
-}
-
-func (e *JoinRoomRequest) GetType() EventType {
-	return EventTypeJoinRoomRequest
-}
-
-func (e *JoinRoomRequest) GetPlayerID() string {
-	return ""
-}
-
-func (e *JoinRoomRequest) Enrich(moniker string) {
-	e.Payload.Moniker = moniker
-	e.Payload.Timestamp = time.Now().UnixMilli()
 }
 
 type JoinRoomOK struct {
@@ -74,23 +52,6 @@ type JoinRoomOK struct {
 	} `json:"payload"`
 }
 
-func (e *JoinRoomOK) GetType() EventType {
-	return EventTypeJoinRoomOK
-}
-
-func (e *JoinRoomOK) GetPlayerID() string {
-	return e.Payload.PlayerId
-}
-
-func (e *JoinRoomOK) Enrich(moniker string, timestamp int64) {
-	e.Payload.Moniker = moniker
-	e.Payload.Timestamp = timestamp
-}
-
-func (e *JoinRoomOK) GetDestination() EventDestination {
-	return e.Destination
-}
-
 type JoinRoomError struct {
 	Type    EventType `json:"type"`
 	Payload struct {
@@ -99,16 +60,11 @@ type JoinRoomError struct {
 	} `json:"payload"`
 }
 
-func (e *JoinRoomError) GetType() EventType {
-	return EventTypeJoinRoomError
-}
-
-func (e *JoinRoomError) GetPlayerID() string {
-	return ""
-}
-
-func (e *JoinRoomError) Enrich(moniker string) {
-	e.Payload.Timestamp = time.Now().UnixMilli()
+type EnrichableEvent interface {
+	GetType() EventType
+	GetDestination() EventDestination
+	GetPlayerID() string
+	Enrich(moniker string)
 }
 
 type GameRulesEvent struct {
@@ -134,7 +90,7 @@ func (e *GameRulesEvent) GetPlayerID() string {
 
 func (e *GameRulesEvent) Enrich(moniker string) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
+
 	e.Payload.Moniker = moniker
 }
 
@@ -162,7 +118,6 @@ func (e *RoundInfoEvent) GetPlayerID() string {
 
 func (e *RoundInfoEvent) Enrich(moniker string) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
 	e.Payload.Moniker = moniker
 }
 
@@ -189,7 +144,6 @@ func (e *RoundOverEvent) GetPlayerID() string {
 
 func (e *RoundOverEvent) Enrich(moniker string) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
 }
 
 type RoundWinnerEvent struct {
@@ -217,7 +171,6 @@ func (e *RoundWinnerEvent) GetPlayerID() string {
 func (e *RoundWinnerEvent) Enrich(moniker string) {
 	e.Payload.Moniker = moniker
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
 }
 
 type PlayerRoundScoresEvent struct {
@@ -244,7 +197,6 @@ func (e *PlayerRoundScoresEvent) GetPlayerID() string {
 
 func (e *PlayerRoundScoresEvent) Enrich(moniker string) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
 	e.Payload.Moniker = moniker
 }
 
@@ -274,7 +226,6 @@ func (e *PlayerWordAcceptedEvent) GetPlayerID() string {
 func (e *PlayerWordAcceptedEvent) Enrich(moniker string) {
 	e.Payload.Moniker = moniker
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
 }
 
 type PlayerWordRejectedEvent struct {
@@ -302,7 +253,6 @@ func (e *PlayerWordRejectedEvent) GetPlayerID() string {
 func (e *PlayerWordRejectedEvent) Enrich(moniker string) {
 	e.Payload.Moniker = moniker
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
 }
 
 type PlayerSubmissionBroadcastEvent struct {
@@ -330,14 +280,13 @@ func (e *PlayerSubmissionBroadcastEvent) GetPlayerID() string {
 func (e *PlayerSubmissionBroadcastEvent) Enrich(moniker string) {
 	e.Payload.Moniker = moniker
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
 }
 
 type NextRoundCountdownEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		Timestamp            int64 `json:"timestamp"`
-		RoundIntervalSeconds int   `json:"roundIntervalSeconds"`
+		Timestamp            int64  `json:"timestamp"`
+		RoundIntervalSeconds int    `json:"roundIntervalSeconds"`
 		Moniker              string `json:"moniker"`
 	} `json:"payload"`
 }
@@ -356,15 +305,5 @@ func (e *NextRoundCountdownEvent) GetPlayerID() string {
 
 func (e *NextRoundCountdownEvent) Enrich(moniker string) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Type = e.GetType()
 	e.Payload.Moniker = moniker
-}
-
-func ToBytes(payload EnrichableEvent) []byte {
-	eventBytes, err := json.Marshal(payload)
-	if err != nil {
-		log.Println("Error marshalling payload:", err)
-		return nil
-	}
-	return eventBytes
 }
