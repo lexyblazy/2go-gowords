@@ -3,15 +3,18 @@ package lobby
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
-	"github.com/gorilla/websocket"
+	// "github.com/gorilla/websocket"
 	"github.com/lexyblazy/gowords/internal/config"
 	"github.com/lexyblazy/gowords/internal/dictionary"
+	"github.com/lexyblazy/gowords/internal/events"
 )
 
 type Lobby struct {
@@ -55,86 +58,103 @@ func (l *Lobby) allocateRooms() {
 	}
 }
 
-func (l *Lobby) makeEvent(status string, message string) []byte {
+func (l *Lobby) validateMoniker(moniker string) (bool, string) {
 
-	eventBytes, err := json.Marshal(OutgoingMessage{
-		Type:    "joinRoom",
-		Status:  status,
-		Message: message,
-	})
+	moniker = strings.TrimSpace(moniker)
+	length := utf8.RuneCountInString(moniker)
 
-	if err != nil {
-		return nil
+	if length < 3 {
+		return false, "moniker must be at least 3 characters long"
 	}
 
-	return eventBytes
-}
-
-func (l *Lobby) addMoniker(conn *websocket.Conn) ([]byte, error, *Player) {
-
-	_, message, err := conn.ReadMessage()
-	if err != nil {
-		return nil, err, nil
+	if length > 16 {
+		return false, "moniker must be less than 16 characters long"
 	}
 
-	joinPayload := JoinRoomPayload{}
-	err = json.Unmarshal(message, &joinPayload)
-
-	if err != nil {
-		return nil, err, nil
-	}
-
-	moniker := strings.TrimSpace(joinPayload.Moniker)
-
-	if len(moniker) > 16 {
-		return l.makeEvent("error", "moniker must be less than 16 characters long"), nil, nil
-	}
-
-	if !regexp.MustCompile(`^[a-zA-Z0-9-_]+$`).MatchString(moniker) {
-		return l.makeEvent("error", "moniker must contain only letters and numbers"), nil, nil
+	for _, r := range moniker {
+		if unicode.IsControl(r) {
+			return false, "moniker must contain only printable characters"
+		}
 	}
 
 	if _, ok := l.monikers[moniker]; ok {
-		return l.makeEvent("error", moniker+" is already in use. Please choose a different moniker."), nil, nil
+		return false, moniker + " is already in use. Please choose a different moniker."
 	}
+
+	return true, ""
+}
+
+func (l *Lobby) addMoniker(moniker string) (*Player, error) {
 
 	uuid, err := newUUID()
 
 	if err != nil {
-		return l.makeEvent("error", "error generating UUID"), nil, nil
+		return nil, errors.New("error generating UUID")
 	}
 
 	l.monikers[moniker] = uuid
 
-	return l.makeEvent("success", "You joined the room as: "+moniker), nil, &Player{
+	return &Player{
 		moniker: moniker,
 		id:      uuid,
-	}
+	}, nil
 }
 
 func (l *Lobby) removeMoniker(moniker string) {
 	delete(l.monikers, moniker)
 }
 
-func (l *Lobby) JoinRoom(conn *websocket.Conn) ([]byte, error) {
+func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 
-	joinMessage, err, basePlayer := l.addMoniker(conn)
+	joinPayload := events.JoinRoomRequest{}
+	err := json.Unmarshal(message, &joinPayload)
 
-	if basePlayer == nil {
-		return joinMessage, err
+	if err != nil {
+		return nil, err
 	}
+
+	ok, errorMessage := l.validateMoniker(joinPayload.Payload.Moniker)
+
+	if !ok {
+
+		var joinRoomErrorEvent events.JoinRoomError
+		joinRoomErrorEvent.Type = events.EventTypeJoinRoomError
+		joinRoomErrorEvent.Payload.Message = errorMessage
+		joinRoomErrorEvent.Payload.Timestamp = time.Now().Unix()
+
+		return joinRoomErrorEvent.ToBytes(), nil
+	}
+
+	basePlayer, err := l.addMoniker(joinPayload.Payload.Moniker)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var joinRoomOKEvent events.JoinRoomOK
+	joinRoomOKEvent.Type = events.EventTypeJoinRoomOK
+	joinRoomOKEvent.Payload.Moniker = basePlayer.moniker
+	joinRoomOKEvent.Payload.PlayerId = basePlayer.id
+	joinRoomOKEvent.Payload.Timestamp = time.Now().Unix()
+	joinRoomOKEvent.Payload.RoomId = 0
+
+	// update player structs
+	player.moniker = basePlayer.moniker
+	player.id = basePlayer.id
 
 	for i := 1; i <= len(l.rooms); i++ {
 
 		room := l.rooms[i]
 
 		if room.GetPlayerCount() < l.c.Lobby.MaxPlayersPerRoom {
-			room.registerChan <- NewPlayer(conn, room, basePlayer.moniker, basePlayer.id)
-			return joinMessage, nil
+			player.room = room
+			room.registerChan <- player
+			joinRoomOKEvent.Payload.RoomId = i
+			break
 		}
 	}
 
-	return l.makeEvent("error", "all rooms are full"), nil
+	return joinRoomOKEvent.ToBytes(), nil
 }
 
 func (l *Lobby) printStats() {
