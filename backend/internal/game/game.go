@@ -2,13 +2,12 @@ package game
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
 	"github.com/lexyblazy/gowords/internal/config"
 	"github.com/lexyblazy/gowords/internal/dictionary"
+	"github.com/lexyblazy/gowords/internal/events"
 )
 
 type GameState struct {
@@ -17,10 +16,13 @@ type GameState struct {
 	rng          *rand.Rand
 	currentRound *GameRound
 	c            *config.Config
-	emitCb       func(eventType EventType, payload any)
+	emitEvent    func(event events.EnrichableEvent)
 }
 
-func NewGameState(c *config.Config, d *dictionary.Dictionary, emitCb func(eventType EventType, payload any)) *GameState {
+func NewGameState(
+	c *config.Config, d *dictionary.Dictionary,
+	emitEvent func(event events.EnrichableEvent),
+) *GameState {
 	rng := rand.New(rand.NewSource(NewSeed()))
 	box := NewGamebox(d, rng)
 
@@ -29,7 +31,7 @@ func NewGameState(c *config.Config, d *dictionary.Dictionary, emitCb func(eventT
 		rng:          rng,
 		currentRound: nil,
 		rounds:       make(chan *GameRound, 500),
-		emitCb:       emitCb,
+		emitEvent:    emitEvent,
 		c:            c,
 	}
 }
@@ -48,7 +50,7 @@ func (gs *GameState) NewRound() *GameRound {
 		seenWords:               make(map[string]struct{}),
 		submissionChan:          make(chan *Submission),
 		scores:                  make(map[string]int),
-		emitCb:                  gs.emitCb,
+		emitEvent:               gs.emitEvent,
 	}
 }
 
@@ -122,12 +124,17 @@ func (gs *GameState) Run() {
 		gs.currentRound = <-gs.rounds
 		gs.PlayCurrentRound(timeLimit)
 
-		gs.emitGeneralMessage("The round is over")
+		var event events.RoundOverEvent
+		event.Payload.Message = "The round is over"
+		gs.emitEvent(&event)
+
 		gs.currentRound.ReportScores()
 		gs.currentRound = nil
 
-		// Sleep for 5 seconds before starting a new round
-		gs.emitGeneralMessage(fmt.Sprintf("Starting new round in %d seconds...", gs.c.Game.RoundIntervalSeconds))
+		var nxtRoundCntDwn events.NextRoundCountdownEvent
+		nxtRoundCntDwn.Payload.RoundIntervalSeconds = gs.c.Game.RoundIntervalSeconds
+		gs.emitEvent(&nxtRoundCntDwn)
+		// Sleep for the round interval before starting a new round
 		time.Sleep(time.Duration(gs.c.Game.RoundIntervalSeconds) * time.Second)
 
 	}
@@ -147,15 +154,15 @@ func (gs *GameState) PrintRound(ctx context.Context) {
 		default:
 		}
 
-		stringsBuilder := strings.Builder{}
-		stringsBuilder.WriteString("The words are: ")
+		words := []string{}
 		for _, word := range gs.currentRound.words {
-			stringsBuilder.WriteString(word.Text + " ")
+			words = append(words, word.Text)
 		}
-		result := stringsBuilder.String()
 
-		content := fmt.Sprintf("%s \nThere are %d possible valid words. \n", result, len(gs.currentRound.validWords))
-		gs.emitGeneralMessage(content)
+		var event events.RoundInfoEvent
+		event.Payload.Words = words
+		event.Payload.ValidWordsCount = len(gs.currentRound.validWords)
+		gs.emitEvent(&event)
 		time.Sleep(5 * time.Second)
 
 	}
@@ -171,12 +178,10 @@ The minimum word length is 3 letters.
 During the last 30 seconds of the round, a two letter word will be added to expand the possible words.
 Happy Guessing!`
 
-	gs.emitGeneralMessage(rules)
+	var event events.GameRulesEvent
+	event.Payload.Message = rules
+
+	gs.emitEvent(&event)
 
 	time.Sleep(5 * time.Second)
-}
-
-func (gs *GameState) emitGeneralMessage(message string) {
-
-	gs.emitCb(EventTypeGeneral, BasicPayload{Message: message})
 }

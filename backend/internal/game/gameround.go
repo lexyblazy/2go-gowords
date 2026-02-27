@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lexyblazy/gowords/internal/dictionary"
+	"github.com/lexyblazy/gowords/internal/events"
 )
 
 type Submission struct {
@@ -22,7 +24,15 @@ type GameRound struct {
 	scores                  map[string]int
 
 	submissionChan chan *Submission
-	emitCb         func(eventType EventType, payload any)
+	emitEvent         func(event events.EnrichableEvent)
+}
+
+func (gr *GameRound) makeWordRejectedEvent(message string, playerId string, word string)  {
+	var event events.PlayerWordRejectedEvent
+	event.Payload.Message = message
+	event.Payload.PlayerId = playerId
+	event.Payload.Word = word
+	gr.emitEvent(&event)
 }
 
 func (gr *GameRound) handleSubmission(ctx context.Context, s *Submission) {
@@ -39,25 +49,26 @@ func (gr *GameRound) handleSubmission(ctx context.Context, s *Submission) {
 
 	length := strings.Split(word, " ")
 	if len(length) > 1 {
-		gr.emitEvent(EventTypePlayerWordRejected, BasicPayload{Message: "Multiple words are not allowed", PlayerId: playerId})
-		return
+		gr.makeWordRejectedEvent("Multiple words are not allowed", playerId, word)
+		return 
+		
 	}
 	word = strings.ToLower(strings.TrimSpace(word))
 
 	if len(word) < 3 {
-		gr.emitEvent(EventTypePlayerWordRejected, BasicPayload{Message: "Words must be at least 3 letters long", PlayerId: playerId})
+		gr.makeWordRejectedEvent("Words must be at least 3 letters long", playerId, word)
 		return
 	}
 
 	// check if the word is in the valid words
 	if _, ok := gr.validWords[word]; !ok {
-		gr.emitEvent(EventTypePlayerWordRejected, BasicPayload{Message: fmt.Sprintf("%s is not a valid submission", word), PlayerId: playerId})
+		gr.makeWordRejectedEvent(fmt.Sprintf("%s is not a valid submission", word), playerId, word)
 		return
 	}
 
 	// check if the word has already been seen
 	if _, ok := gr.seenWords[word]; ok {
-		gr.emitEvent(EventTypePlayerWordRejected, BasicPayload{Message: fmt.Sprintf("%s has already been used", word), PlayerId: playerId})
+		gr.makeWordRejectedEvent(fmt.Sprintf("%s has already been used", word), playerId, word)
 		return
 	}
 
@@ -67,20 +78,24 @@ func (gr *GameRound) handleSubmission(ctx context.Context, s *Submission) {
 
 }
 
-func (gr *GameRound) emitEvent(eventType EventType, payload any) {
 
-	gr.emitCb(eventType, payload)
-}
 
 func (gr *GameRound) AwardPoints(word string, playerId string) {
 	points := len(word) - 2
 	gr.scores[playerId] += points
-	content := fmt.Sprintf("You earned %d points for %s", points, word)
 
-	gr.emitEvent(EventTypePlayerWordAccepted, BasicPayload{Message: content, PlayerId: playerId})
+	var event events.PlayerWordAcceptedEvent
+	event.Payload.Word = word
+	event.Payload.Points = points
+	event.Payload.PlayerId = playerId
+	gr.emitEvent(&event)
 
 	// send the players submission to the general channel excluding the player
-	gr.emitEvent(EventTypeGeneralExcludingPlayer, BasicPayload{Message: word, PlayerId: playerId})
+	var playerSubmissionEvent events.PlayerSubmissionBroadcastEvent
+	playerSubmissionEvent.Payload.Word = word
+	playerSubmissionEvent.Payload.PlayerId = playerId
+	playerSubmissionEvent.Payload.Timestamp = time.Now().Unix()
+	gr.emitEvent(&playerSubmissionEvent)
 
 }
 
@@ -97,13 +112,20 @@ func (gr *GameRound) ReportScores() {
 
 		// send each player their score
 		if score > 0 {
-			content := fmt.Sprintf("🎉 You scored a total of %d points in this round", score)
-			gr.emitEvent(EventTypePlayerRoundScores, BasicPayload{Message: content, PlayerId: playerId})
+			var event events.PlayerRoundScoresEvent
+			event.Payload.Score = score
+			event.Payload.Timestamp = time.Now().Unix()
+			event.Payload.PlayerId = playerId
+			gr.emitEvent(&event)
 		}
 	}
 
 	if winningScore > 0 {
-		gr.emitEvent(EventTypeRoundWinner, RoundWinnerPayload{PlayerId: winningPlayerId, Score: winningScore})
+		var event events.RoundWinnerEvent
+		event.Payload.PlayerId = winningPlayerId
+		event.Payload.Score = winningScore
+		event.Payload.Timestamp = time.Now().Unix()
+		gr.emitEvent(&event)
 	}
 
 }

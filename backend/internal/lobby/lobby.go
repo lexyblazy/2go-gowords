@@ -84,6 +84,14 @@ func (l *Lobby) validateMoniker(moniker string) (bool, string) {
 	return true, ""
 }
 
+func toBytes(event any) ([]byte, error) {
+	bytes, err := json.Marshal(event)
+	if err != nil {
+		return nil, errors.New("error marshalling event: " + err.Error())
+	}
+	return bytes, nil
+}
+
 func (l *Lobby) addMoniker(moniker string) (*Player, error) {
 
 	uuid, err := newUUID()
@@ -120,9 +128,9 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 		var joinRoomErrorEvent events.JoinRoomError
 		joinRoomErrorEvent.Type = events.EventTypeJoinRoomError
 		joinRoomErrorEvent.Payload.Message = errorMessage
-		joinRoomErrorEvent.Payload.Timestamp = time.Now().Unix()
+		joinRoomErrorEvent.Payload.Timestamp = time.Now().UnixMilli()
 
-		return joinRoomErrorEvent.ToBytes(), nil
+		return toBytes(joinRoomErrorEvent)
 	}
 
 	basePlayer, err := l.addMoniker(joinPayload.Payload.Moniker)
@@ -135,7 +143,7 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 	joinRoomOKEvent.Type = events.EventTypeJoinRoomOK
 	joinRoomOKEvent.Payload.Moniker = basePlayer.moniker
 	joinRoomOKEvent.Payload.PlayerId = basePlayer.id
-	joinRoomOKEvent.Payload.Timestamp = time.Now().Unix()
+	joinRoomOKEvent.Payload.Timestamp = time.Now().UnixMilli()
 	joinRoomOKEvent.Payload.RoomId = 0
 
 	// update player structs
@@ -154,7 +162,7 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 		}
 	}
 
-	return joinRoomOKEvent.ToBytes(), nil
+	return toBytes(joinRoomOKEvent)
 }
 
 func (l *Lobby) printStats() {

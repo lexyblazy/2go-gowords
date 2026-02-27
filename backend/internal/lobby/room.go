@@ -2,12 +2,12 @@ package lobby
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
 	"github.com/lexyblazy/gowords/internal/config"
 	"github.com/lexyblazy/gowords/internal/dictionary"
+	"github.com/lexyblazy/gowords/internal/events"
 	"github.com/lexyblazy/gowords/internal/game"
 )
 
@@ -27,11 +27,12 @@ type Room struct {
 }
 
 type OutgoingMessage struct {
-	Type    string `json:"type"`
-	Message string `json:"message"`
-	Status  string `json:"status"`
+	Type    events.EventType `json:"type"`
+	Message string           `json:"message"`
+	Status  string           `json:"status"`
 	Payload struct {
-		Moniker string `json:"moniker"`
+		Moniker   string `json:"moniker"`
+		Timestamp int64  `json:"timestamp"`
 	} `json:"payload"`
 }
 
@@ -68,23 +69,34 @@ func (r *Room) GetPlayerCount() int {
 	return len(r.players)
 }
 
+func (r *Room) Broadcast(event events.EnrichableEvent) {
+	destination := event.GetDestination()
+	var moniker string
+
+	playerId := event.GetPlayerID()
+	if playerId == "" {
+		moniker = "System 🤖🤖🤖"
+	} else {
+		moniker = r.players[playerId].moniker
+	}
+
+	event.Enrich(moniker)
+
+	switch destination {
+	case events.EventDestinationAll:
+		r.BroadcastToAll(event)
+	case events.EventDestinationPlayer:
+		r.BroadcastToPlayer(event.GetPlayerID(), event)
+	case events.EventDestinationOtherPlayers:
+		r.BroadcastToOtherPlayers(event.GetPlayerID(), event)
+	}
+
+}
+
 func (r *Room) Run() {
 
 	go r.PrintPlayers()
-	r.gs = game.NewGameState(r.c, r.d, func(eventType game.EventType, payload any) {
-
-		switch eventType {
-		case game.EventTypeGeneral, game.EventTypeRoundWinner:
-			r.BroadcastToAllPlayers(eventType, payload)
-		case game.EventTypePlayerWordAccepted, game.EventTypePlayerWordRejected, game.EventTypePlayerRoundScores:
-			r.BroadcastToPlayer(payload.(game.BasicPayload))
-		case game.EventTypeGeneralExcludingPlayer:
-			r.BroadcastToOtherPlayers(payload.(game.BasicPayload))
-		default:
-			log.Println("Unknown event type:", eventType)
-		}
-
-	})
+	r.gs = game.NewGameState(r.c, r.d, r.Broadcast)
 
 	go func() {
 		for {
@@ -115,24 +127,9 @@ func (s *Room) GetPlayerMoniker(playerId string) string {
 	return s.players[playerId].moniker
 }
 
-func (s *Room) BroadcastToAllPlayers(eventType game.EventType, payload any) {
+func (s *Room) BroadcastToAll(event events.EnrichableEvent) {
 
-	outgoingMessage := OutgoingMessage{
-		Type: "info",
-	}
-
-	switch eventType {
-	case game.EventTypeGeneral:
-		outgoingMessage.Message = payload.(game.BasicPayload).Message
-	case game.EventTypeRoundWinner:
-		playerId := payload.(game.RoundWinnerPayload).PlayerId
-		score := payload.(game.RoundWinnerPayload).Score
-		playerName := s.GetPlayerMoniker(playerId)
-		outgoingMessage.Message = fmt.Sprintf("🏆 Kudos to %s for winning the round with %d points", playerName, score)
-
-	}
-
-	messageBytes, err := json.Marshal(outgoingMessage)
+	messageBytes, err := json.Marshal(event)
 
 	if err != nil {
 		log.Println("BroadcastToAllPlayers: Error marshalling:", err)
@@ -144,35 +141,22 @@ func (s *Room) BroadcastToAllPlayers(eventType game.EventType, payload any) {
 	}
 }
 
-func (s *Room) BroadcastToPlayer(payload game.BasicPayload) {
+func (s *Room) BroadcastToPlayer(playerId string, event events.EnrichableEvent) {
 
-	outgoingMessage := OutgoingMessage{
-		Type:    "info",
-		Message: payload.Message,
-	}
-
-	messageBytes, err := json.Marshal(outgoingMessage)
-
+	messageBytes, err := json.Marshal(event)
 	if err != nil {
 		log.Println("BroadcastToPlayer: Error marshalling:", err)
 		return
 	}
 
 	for _, p := range s.players {
-		if p.id == payload.PlayerId {
+		if p.id == playerId {
 			p.SendMessage(messageBytes)
 		}
 	}
 }
 
-func (s *Room) BroadcastToOtherPlayers(payload game.BasicPayload) {
-
-	playerName := s.GetPlayerMoniker(payload.PlayerId)
-
-	event := OutgoingMessage{
-		Type:    "general",
-		Message: fmt.Sprintf("%s: %s", playerName, payload.Message),
-	}
+func (s *Room) BroadcastToOtherPlayers(playerId string, event events.EnrichableEvent) {
 
 	messageBytes, err := json.Marshal(event)
 	if err != nil {
@@ -181,7 +165,7 @@ func (s *Room) BroadcastToOtherPlayers(payload game.BasicPayload) {
 	}
 
 	for _, p := range s.players {
-		if p.id != payload.PlayerId {
+		if p.id != playerId {
 			p.SendMessage(messageBytes)
 		}
 	}
