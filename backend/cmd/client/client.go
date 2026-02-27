@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/lexyblazy/gowords/internal/lobby"
+	"github.com/lexyblazy/gowords/internal/events"
 )
 
 type Client struct {
@@ -40,7 +40,11 @@ func (c *Client) Run() error {
 
 		c.conn = conn
 
-		joinMessage, err := json.Marshal(lobby.JoinRoomPayload{Moniker: c.moniker})
+		var joinRoomRequestEvent events.JoinRoomRequest
+		joinRoomRequestEvent.Type = events.EventTypeJoinRoomRequest
+		joinRoomRequestEvent.Payload.Moniker = c.moniker
+
+		joinMessage, err := json.Marshal(joinRoomRequestEvent)
 
 		if err != nil {
 			log.Println("Error marshalling join message payload:", err)
@@ -70,15 +74,8 @@ func (c *Client) Close() {
 }
 
 func (c *Client) handleMessage(message []byte) error {
-	var incomingMessage IncomingMessage
-	err := json.Unmarshal(message, &incomingMessage)
 
-	if err != nil {
-		log.Println("Error unmarshalling message:", err, string(message))
-		return err
-	}
-
-	log.Println(incomingMessage.Message)
+	log.Println(string(message))
 
 	return nil
 
