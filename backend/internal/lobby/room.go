@@ -30,12 +30,9 @@ type OutgoingMessage struct {
 	Type    string `json:"type"`
 	Message string `json:"message"`
 	Status  string `json:"status"`
-}
-
-type JoinRoomPayload struct {
-	Moniker string `json:"moniker,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Message string `json:"message,omitempty"`
+	Payload struct {
+		Moniker string `json:"moniker"`
+	} `json:"payload"`
 }
 
 func NewRoom(c *config.Config, id int, d *dictionary.Dictionary, removeFromLobbyFunc func(moniker string)) *Room {
@@ -59,8 +56,6 @@ func (r *Room) handlePlayerSubmission(playerId string, message []byte) {
 
 func (r *Room) AddPlayer(player *Player) {
 	r.players[player.id] = player
-	go player.readPump()
-	go player.writePump()
 }
 
 func (r *Room) RemovePlayer(player *Player) {

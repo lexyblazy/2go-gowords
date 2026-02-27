@@ -33,23 +33,27 @@ type Player struct {
 	moniker   string
 	id        string
 	room      *Room
+	lobby     *Lobby
 }
 
-func NewPlayer(conn *websocket.Conn, room *Room, moniker string, id string) *Player {
+func NewPlayer(conn *websocket.Conn, room *Room, moniker string, id string, lobby *Lobby) *Player {
 	return &Player{
 		conn:      conn,
 		sendMsgCh: make(chan []byte, 1024),
 		room:      room,
 		moniker:   moniker,
 		id:        id,
+		lobby:     lobby,
 	}
 }
 
-func (p *Player) readPump() {
+func (p *Player) ReadPump() {
 
 	defer func() {
 		p.conn.Close()
-		p.room.unregisterChan <- p
+		if p.room != nil {
+			p.room.unregisterChan <- p
+		}
 	}()
 
 	p.conn.SetReadLimit(maxMessageSize)
@@ -70,12 +74,24 @@ func (p *Player) readPump() {
 
 		message = bytes.TrimSpace(bytes.ReplaceAll(message, newline, space))
 
-		p.room.handlePlayerSubmission(p.id, message)
+		if p.room != nil {
+			p.room.handlePlayerSubmission(p.id, message)
+		} else {
+			joinMessage, err := p.lobby.JoinRoom(p, message)
+
+			if err != nil {
+				log.Println("Error joining room:", err)
+				continue
+
+			}
+			p.SendMessage(joinMessage)
+
+		}
 
 	}
 }
 
-func (p *Player) writePump() {
+func (p *Player) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
