@@ -13,12 +13,15 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 func main() {
 	c := config.New("config.json")
-	lobby := lobby.New(c)
-	lobby.Init()
+	l := lobby.New(c)
+	l.Init()
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -27,13 +30,9 @@ func main() {
 			return
 		}
 
-		joinMessage, err := lobby.JoinRoom(conn)
-		if err != nil {
-			log.Println("Error joining room:", err)
-			return
-		}
-
-		conn.WriteMessage(websocket.TextMessage, joinMessage)
+		player := lobby.NewPlayer(conn, nil, "", "", l)
+		go player.ReadPump()
+		player.WritePump()
 
 	})
 
