@@ -77,7 +77,7 @@ export default function WordInputBar({ isRoundActive, sendWord }: Props) {
 
         <button
           onClick={handleSubmit}
-          disabled={!isRoundActive || !word.trim()}
+          disabled={!isRoundActive}
           className="
           px-5 py-3
           rounded-xl

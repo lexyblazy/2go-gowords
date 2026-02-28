@@ -21,7 +21,7 @@ export default function GameScreen({ state }: { state: AppState }) {
 
       {/* ⌨️ Input */}
       <WordInputBar
-        isRoundActive={state.isRoundActive}
+        isRoundActive={!!state.round}
         sendWord={(word) =>
           sendMessage({
             type: "PLAYER_WORD_SUBMISSION",
