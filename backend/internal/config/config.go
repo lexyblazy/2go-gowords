@@ -14,8 +14,9 @@ type Config struct {
 		MaxPlayersPerRoom int `json:"maxPlayersPerRoom"`
 	} `json:"lobby"`
 	Game struct {
-		TimeLimit int `json:"timeLimit"`
+		RoundDurationSeconds int `json:"roundDurationSeconds"`
 		RoundIntervalSeconds int `json:"roundIntervalSeconds"`
+		PrintRoundIntervalSeconds int `json:"printRoundIntervalSeconds"`
 		WordLength int `json:"wordLength"`
 		WordCount int `json:"wordCount"`
 		DistinctCharacterCount int `json:"distinctCharacterCount"`

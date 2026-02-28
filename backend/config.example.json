@@ -7,13 +7,14 @@
     "maxPlayersPerRoom": 100
   },
   "game": {
-    "timeLimit": 60,
+    "roundDurationSeconds": 120,
     "roundIntervalSeconds": 20,
+    "printRoundIntervalSeconds": 3,
     "wordLength": 6,
     "wordCount": 2,
     "distinctCharacterCount": 10
   },
   "dictionary": {
-    "filePath": "wl.txt"
+    "fileName": "dictionary.txt"
   }
 }
