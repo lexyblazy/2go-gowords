@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/lexyblazy/gowords/internal/config"
@@ -183,7 +184,7 @@ Happy Guessing!`
 
 	var event events.GameRulesEvent
 	event.Type = events.GameRules
-	event.Payload.Message = rules
+	event.Payload.Rules = strings.Split(rules, "\n")
 
 	gs.emitEvent(&event)
 
