@@ -2,16 +2,11 @@ package game
 
 import (
 	"context"
-	"fmt"
+	"strings"
+
 	"github.com/lexyblazy/gowords/internal/dictionary"
 	"github.com/lexyblazy/gowords/internal/events"
-	"strings"
 )
-
-type Submission struct {
-	playerId string
-	word     string
-}
 
 type GameRound struct {
 	words                   []dictionary.Word
@@ -21,7 +16,7 @@ type GameRound struct {
 	seenWords               map[string]struct{}
 	scores                  map[string]int
 
-	submissionChan chan *Submission
+	submissionChan chan *events.PlayerWordSubmissionEvent
 	emitEvent      func(event events.EnrichableEvent)
 }
 
@@ -34,7 +29,7 @@ func (gr *GameRound) makeWordRejectedEvent(message string, playerId string, word
 	gr.emitEvent(&event)
 }
 
-func (gr *GameRound) handleSubmission(ctx context.Context, s *Submission) {
+func (gr *GameRound) handleSubmission(ctx context.Context, event *events.PlayerWordSubmissionEvent) {
 	// input is only one word, multiple words are not allowed
 
 	select {
@@ -43,31 +38,31 @@ func (gr *GameRound) handleSubmission(ctx context.Context, s *Submission) {
 	default:
 	}
 
-	word := s.word
-	playerId := s.playerId
+	word := event.Payload.Word
+	playerId := event.Payload.PlayerId
 
 	length := strings.Split(word, " ")
 	if len(length) > 1 {
-		gr.makeWordRejectedEvent("Multiple words are not allowed", playerId, word)
+		gr.makeWordRejectedEvent("multiple words are not allowed", playerId, word)
 		return
 
 	}
 	word = strings.ToLower(strings.TrimSpace(word))
 
 	if len(word) < 3 {
-		gr.makeWordRejectedEvent("Words must be at least 3 letters long", playerId, word)
+		gr.makeWordRejectedEvent("word must be at least 3 letters long", playerId, word)
 		return
 	}
 
 	// check if the word is in the valid words
 	if _, ok := gr.validWords[word]; !ok {
-		gr.makeWordRejectedEvent(fmt.Sprintf("%s is not a valid submission", word), playerId, word)
+		gr.makeWordRejectedEvent("not a valid submission", playerId, word)
 		return
 	}
 
 	// check if the word has already been seen
 	if _, ok := gr.seenWords[word]; ok {
-		gr.makeWordRejectedEvent(fmt.Sprintf("%s has already been used", word), playerId, word)
+		gr.makeWordRejectedEvent("it's already been used", playerId, word)
 		return
 	}
 
@@ -121,7 +116,7 @@ func (gr *GameRound) ReportScores() {
 	if winningScore > 0 {
 		var event events.RoundWinnerEvent
 		event.Type = events.RoundWinner
-		event.Payload.PlayerId = winningPlayerId
+		event.Payload.WinningPlayerId = winningPlayerId
 		event.Payload.Score = winningScore
 		gr.emitEvent(&event)
 	}

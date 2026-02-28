@@ -31,6 +31,7 @@ const (
 	PlayerWordRejected EventType = "PLAYER_WORD_REJECTED"
 
 	PlayerSubmissionBroadcast EventType = "PLAYER_SUBMISSION_BROADCAST"
+	PlayerWordSubmission      EventType = "PLAYER_WORD_SUBMISSION"
 )
 
 type JoinRoomRequest struct {
@@ -60,8 +61,16 @@ type JoinRoomError struct {
 	} `json:"payload"`
 }
 
+type PlayerWordSubmissionEvent struct {
+	Type    EventType `json:"type"`
+	Payload struct {
+		PlayerId string `json:"playerId"`
+		Word     string `json:"word"`
+	} `json:"payload"`
+}
+
 type EnrichmentParams struct {
-	PlayerName string
+	PlayerName    string
 	SystemMoniker string
 }
 
@@ -154,11 +163,11 @@ func (e *RoundOverEvent) Enrich(params EnrichmentParams) {
 type RoundWinnerEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		WinningPlayerId      string `json:"playerId"`
-		WinnerPlayerName    string `json:"winnerPlayerName"`
-		Score         int    `json:"score"`
-		Timestamp     int64  `json:"timestamp"`
-		SystemMoniker string `json:"systemMoniker"`
+		WinningPlayerId  string `json:"playerId"`
+		WinnerPlayerName string `json:"winnerPlayerName"`
+		Score            int    `json:"score"`
+		Timestamp        int64  `json:"timestamp"`
+		SystemMoniker    string `json:"systemMoniker"`
 	} `json:"payload"`
 }
 
@@ -212,11 +221,12 @@ func (e *PlayerRoundScoresEvent) Enrich(params EnrichmentParams) {
 type PlayerWordAcceptedEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		PlayerId   string `json:"playerId"`
-		PlayerName string `json:"playerName"`
-		Word       string `json:"word"`
-		Points     int    `json:"points"`
-		Timestamp  int64  `json:"timestamp"`
+		PlayerId      string `json:"playerId"`
+		PlayerName    string `json:"playerName"`
+		Word          string `json:"word"`
+		Points        int    `json:"points"`
+		Timestamp     int64  `json:"timestamp"`
+		SystemMoniker string `json:"systemMoniker"`
 	} `json:"payload"`
 }
 
@@ -235,16 +245,18 @@ func (e *PlayerWordAcceptedEvent) GetPlayerID() string {
 func (e *PlayerWordAcceptedEvent) Enrich(params EnrichmentParams) {
 	e.Payload.PlayerName = params.PlayerName
 	e.Payload.Timestamp = time.Now().UnixMilli()
+	e.Payload.SystemMoniker = params.SystemMoniker
 }
 
 type PlayerWordRejectedEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		PlayerId   string `json:"playerId"`
-		PlayerName string `json:"playerName"`
-		Word       string `json:"word"`
-		Message    string `json:"message"`
-		Timestamp  int64  `json:"timestamp"`
+		PlayerId      string `json:"playerId"`
+		PlayerName    string `json:"playerName"`
+		Word          string `json:"word"`
+		Message       string `json:"message"`
+		Timestamp     int64  `json:"timestamp"`
+		SystemMoniker string `json:"systemMoniker"`
 	} `json:"payload"`
 }
 
@@ -262,6 +274,7 @@ func (e *PlayerWordRejectedEvent) GetPlayerID() string {
 func (e *PlayerWordRejectedEvent) Enrich(params EnrichmentParams) {
 	e.Payload.PlayerName = params.PlayerName
 	e.Payload.Timestamp = time.Now().UnixMilli()
+	e.Payload.SystemMoniker = params.SystemMoniker
 }
 
 type PlayerSubmissionBroadcastEvent struct {
@@ -271,6 +284,7 @@ type PlayerSubmissionBroadcastEvent struct {
 		PlayerName string `json:"playerName"`
 		Word       string `json:"word"`
 		Timestamp  int64  `json:"timestamp"`
+		SystemMoniker string `json:"systemMoniker"`
 	} `json:"payload"`
 }
 
@@ -289,6 +303,7 @@ func (e *PlayerSubmissionBroadcastEvent) GetPlayerID() string {
 func (e *PlayerSubmissionBroadcastEvent) Enrich(params EnrichmentParams) {
 	e.Payload.PlayerName = params.PlayerName
 	e.Payload.Timestamp = time.Now().UnixMilli()
+	e.Payload.SystemMoniker = params.SystemMoniker
 }
 
 type NextRoundCountdownEvent struct {

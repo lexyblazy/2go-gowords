@@ -49,7 +49,7 @@ func (gs *GameState) NewRound() *GameRound {
 		validWords:              validWords,
 		validWordsWithExpansion: validWordsWithExpansion,
 		seenWords:               make(map[string]struct{}),
-		submissionChan:          make(chan *Submission),
+		submissionChan:          make(chan *events.PlayerWordSubmissionEvent),
 		scores:                  make(map[string]int),
 		emitEvent:               gs.emitEvent,
 	}
@@ -75,9 +75,11 @@ func (gs *GameState) RefillRounds() {
 	}
 }
 
-func (gs *GameState) PlayCurrentRound(timeLimit time.Duration) {
+func (gs *GameState) PlayCurrentRound() {
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeLimit)
+	roundDuration := time.Duration(gs.c.Game.RoundDurationSeconds) * time.Second
+
+	ctx, cancel := context.WithTimeout(context.Background(), roundDuration)
 	defer cancel()
 
 	go gs.PrintRound(ctx)
@@ -85,7 +87,7 @@ func (gs *GameState) PlayCurrentRound(timeLimit time.Duration) {
 	// during the last 30 seconds of the round, the expansion word will be added to the words list
 	// and the valid words map will be updated to include the expansion word
 	go func(c context.Context) {
-		time.Sleep(timeLimit - 30*time.Second)
+		time.Sleep(roundDuration - 30*time.Second)
 		select {
 		case <-c.Done():
 			return
@@ -104,12 +106,12 @@ func (gs *GameState) PlayCurrentRound(timeLimit time.Duration) {
 	}
 }
 
-func (gs *GameState) SubmitWord(playerId string, word string) {
+func (gs *GameState) SubmitWord(event *events.PlayerWordSubmissionEvent) {
 	if gs.currentRound == nil {
 		return
 	}
 
-	gs.currentRound.submissionChan <- &Submission{playerId: playerId, word: word}
+	gs.currentRound.submissionChan <- event
 }
 
 func (gs *GameState) Run() {
@@ -117,13 +119,12 @@ func (gs *GameState) Run() {
 	go gs.RefillRounds()
 
 	// pick one round at random
-	timeLimit := 60 * time.Second
 
 	for {
 
 		gs.PrintRules()
 		gs.currentRound = <-gs.rounds
-		gs.PlayCurrentRound(timeLimit)
+		gs.PlayCurrentRound()
 
 		var event events.RoundOverEvent
 		event.Type = events.RoundOver
@@ -167,7 +168,7 @@ func (gs *GameState) PrintRound(ctx context.Context) {
 		event.Payload.Words = words
 		event.Payload.ValidWordsCount = len(gs.currentRound.validWords)
 		gs.emitEvent(&event)
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Duration(gs.c.Game.PrintRoundIntervalSeconds) * time.Second)
 
 	}
 }

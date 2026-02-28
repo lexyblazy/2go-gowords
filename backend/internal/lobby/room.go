@@ -51,7 +51,20 @@ func NewRoom(c *config.Config, id int, d *dictionary.Dictionary, removeFromLobby
 
 func (r *Room) handlePlayerSubmission(playerId string, message []byte) {
 
-	r.gs.SubmitWord(playerId, string(message))
+	var event events.PlayerWordSubmissionEvent
+	err := json.Unmarshal(message, &event)
+
+	if err != nil {
+		log.Println("Error unmarshalling player word submission event:", err)
+		return
+	}
+
+	if event.Payload.PlayerId != playerId {
+		log.Println("Player ID mismatch:", event.Payload.PlayerId, playerId)
+		return
+	}
+
+	r.gs.SubmitWord(&event)
 
 }
 
@@ -71,16 +84,22 @@ func (r *Room) GetPlayerCount() int {
 
 func (r *Room) Broadcast(event events.EnrichableEvent) {
 	destination := event.GetDestination()
-	var moniker string
+	var playerName string
 
 	playerId := event.GetPlayerID()
-	if playerId == "" {
-		moniker = "System 🤖🤖🤖"
-	} else {
-		moniker = r.players[playerId].moniker
+
+	if len(playerId) > 0 {
+		player, exists := r.players[playerId]
+
+		if !exists || player == nil {
+			// Player no longer exists (disconnected or not yet joined)
+			return
+		}
+
+		playerName = player.moniker
 	}
 
-	event.Enrich(moniker)
+	event.Enrich(events.EnrichmentParams{PlayerName: playerName, SystemMoniker: SystemMoniker})
 
 	switch destination {
 	case events.EventDestinationAll:
@@ -123,7 +142,7 @@ func (s *Room) PrintPlayers() {
 	}
 }
 
-func (s *Room) GetPlayerMoniker(playerId string) string {
+func (s *Room) GetPlayerName(playerId string) string {
 	return s.players[playerId].moniker
 }
 
