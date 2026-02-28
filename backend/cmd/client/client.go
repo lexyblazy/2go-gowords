@@ -17,12 +17,7 @@ type Client struct {
 	conn      *websocket.Conn
 	sendMsgCh chan []byte
 	moniker   string
-}
-
-type IncomingMessage struct {
-	Type    string `json:"type"`
-	Message string `json:"message"`
-	Status  string `json:"status,omitempty"`
+	playerId  string
 }
 
 func (c *Client) Run() error {
@@ -42,7 +37,7 @@ func (c *Client) Run() error {
 
 		var joinRoomRequestEvent events.JoinRoomRequest
 		joinRoomRequestEvent.Type = events.EventTypeJoinRoomRequest
-		joinRoomRequestEvent.Payload.Moniker = c.moniker
+		joinRoomRequestEvent.Payload.PlayerName = c.moniker
 
 		joinMessage, err := json.Marshal(joinRoomRequestEvent)
 
@@ -75,7 +70,20 @@ func (c *Client) Close() {
 
 func (c *Client) handleMessage(message []byte) error {
 
-	log.Println(string(message))
+	var incomingMessage events.JoinRoomOK
+	err := json.Unmarshal(message, &incomingMessage)
+	if err != nil {
+		log.Println("Error unmarshalling incoming message:", err)
+		return err
+	}
+
+	switch incomingMessage.Type {
+	case events.EventTypeJoinRoomOK:
+		c.playerId = incomingMessage.Payload.PlayerId
+		log.Println("Joined Room #", incomingMessage.Payload.RoomId, "as", incomingMessage.Payload.PlayerName)
+	default:
+		log.Println(string(message))
+	}
 
 	return nil
 
@@ -151,8 +159,19 @@ func main() {
 				log.Println("Error reading input:", err)
 				continue
 			}
-			client.sendMsgCh <- []byte(scanner.Text())
 
+			var playerWordSubmissionEvent events.PlayerWordSubmissionEvent
+			playerWordSubmissionEvent.Type = events.PlayerWordSubmission
+			playerWordSubmissionEvent.Payload.PlayerId = client.playerId
+			playerWordSubmissionEvent.Payload.Word = scanner.Text()
+
+			playerWordSubmissionMessage, err := json.Marshal(playerWordSubmissionEvent)
+			if err != nil {
+				log.Println("Error marshalling player word submission message payload:", err)
+				continue
+			}
+
+			client.sendMsgCh <- playerWordSubmissionMessage
 		}
 	}()
 
