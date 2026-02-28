@@ -3,6 +3,7 @@ package lobby
 import (
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/lexyblazy/gowords/internal/config"
@@ -70,6 +71,15 @@ func (r *Room) handlePlayerSubmission(playerId string, message []byte) {
 
 func (r *Room) AddPlayer(player *Player) {
 	r.players[player.id] = player
+
+	// broadcast the rules to the player
+	var event events.GameRulesEvent
+	event.Type = events.GameRules
+	event.Payload.Rules = strings.Split(r.c.Game.Rules, "\n")
+	event.Payload.Timestamp = time.Now().UnixMilli()
+	event.Payload.SystemMoniker = SystemMoniker
+	r.BroadcastToPlayer(player.id, &event)
+
 }
 
 func (r *Room) RemovePlayer(player *Player) {

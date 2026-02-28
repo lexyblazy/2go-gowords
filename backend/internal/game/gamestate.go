@@ -114,7 +114,9 @@ func (gs *GameState) Run() {
 
 	for {
 
-		gs.PrintRules()
+		gs.BroadcastRules()
+		time.Sleep(5 * time.Second)
+
 		gs.currentRound = <-gs.rounds
 		gs.PlayCurrentRound()
 
@@ -165,12 +167,11 @@ func (gs *GameState) PrintRound(ctx context.Context) {
 	}
 }
 
-func (gs *GameState) PrintRules() {
+func (gs *GameState) BroadcastRules() {
 	var event events.GameRulesEvent
 	event.Type = events.GameRules
 	event.Payload.Rules = strings.Split(gs.c.Game.Rules, "\n")
 
 	gs.emitEvent(&event)
 
-	time.Sleep(5 * time.Second)
 }
