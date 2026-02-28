@@ -36,19 +36,19 @@ const (
 type JoinRoomRequest struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		Moniker   string `json:"moniker"`
-		Timestamp int64  `json:"timestamp"`
+		PlayerName string `json:"playerName"`
+		Timestamp  int64  `json:"timestamp"`
 	} `json:"payload"`
 }
 
 type JoinRoomOK struct {
-	Type        EventType        `json:"type"`
-	Destination EventDestination `json:"destination"`
-	Payload     struct {
-		Moniker   string `json:"moniker"`
-		PlayerId  string `json:"playerId"`
-		Timestamp int64  `json:"timestamp"`
-		RoomId    int    `json:"roomId"`
+	Type    EventType `json:"type"`
+	Payload struct {
+		SystemMoniker string `json:"systemMoniker"`
+		PlayerName    string `json:"playerName"`
+		PlayerId      string `json:"playerId"`
+		Timestamp     int64  `json:"timestamp"`
+		RoomId        int    `json:"roomId"`
 	} `json:"payload"`
 }
 
@@ -60,19 +60,24 @@ type JoinRoomError struct {
 	} `json:"payload"`
 }
 
+type EnrichmentParams struct {
+	PlayerName string
+	SystemMoniker string
+}
+
 type EnrichableEvent interface {
 	GetType() EventType
 	GetDestination() EventDestination
 	GetPlayerID() string
-	Enrich(moniker string)
+	Enrich(params EnrichmentParams)
 }
 
 type GameRulesEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		Moniker   string `json:"moniker"`
-		Message   string `json:"message"`
-		Timestamp int64  `json:"timestamp"`
+		SystemMoniker string   `json:"systemMoniker"`
+		Rules         []string `json:"rules"`
+		Timestamp     int64    `json:"timestamp"`
 	} `json:"payload"`
 }
 
@@ -88,10 +93,9 @@ func (e *GameRulesEvent) GetPlayerID() string {
 	return ""
 }
 
-func (e *GameRulesEvent) Enrich(moniker string) {
+func (e *GameRulesEvent) Enrich(params EnrichmentParams) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-
-	e.Payload.Moniker = moniker
+	e.Payload.SystemMoniker = params.SystemMoniker
 }
 
 type RoundInfoEvent struct {
@@ -100,7 +104,7 @@ type RoundInfoEvent struct {
 		Words           []string `json:"words"`
 		ValidWordsCount int      `json:"validWordsCount"`
 		Timestamp       int64    `json:"timestamp"`
-		Moniker         string   `json:"moniker"`
+		SystemMoniker   string   `json:"systemMoniker"`
 	} `json:"payload"`
 }
 
@@ -116,17 +120,17 @@ func (e *RoundInfoEvent) GetPlayerID() string {
 	return ""
 }
 
-func (e *RoundInfoEvent) Enrich(moniker string) {
+func (e *RoundInfoEvent) Enrich(params EnrichmentParams) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Payload.Moniker = moniker
+	e.Payload.SystemMoniker = params.SystemMoniker
 }
 
 type RoundOverEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		Message   string `json:"message"`
-		Timestamp int64  `json:"timestamp"`
-		Moniker   string `json:"moniker"`
+		Message       string `json:"message"`
+		Timestamp     int64  `json:"timestamp"`
+		SystemMoniker string `json:"systemMoniker"`
 	} `json:"payload"`
 }
 
@@ -142,17 +146,19 @@ func (e *RoundOverEvent) GetPlayerID() string {
 	return ""
 }
 
-func (e *RoundOverEvent) Enrich(moniker string) {
+func (e *RoundOverEvent) Enrich(params EnrichmentParams) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
+	e.Payload.SystemMoniker = params.SystemMoniker
 }
 
 type RoundWinnerEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		PlayerId  string `json:"playerId"`
-		Moniker   string `json:"moniker"`
-		Score     int    `json:"score"`
-		Timestamp int64  `json:"timestamp"`
+		WinningPlayerId      string `json:"playerId"`
+		WinnerPlayerName    string `json:"winnerPlayerName"`
+		Score         int    `json:"score"`
+		Timestamp     int64  `json:"timestamp"`
+		SystemMoniker string `json:"systemMoniker"`
 	} `json:"payload"`
 }
 
@@ -165,21 +171,24 @@ func (e *RoundWinnerEvent) GetDestination() EventDestination {
 }
 
 func (e *RoundWinnerEvent) GetPlayerID() string {
-	return e.Payload.PlayerId
+	return e.Payload.WinningPlayerId
 }
 
-func (e *RoundWinnerEvent) Enrich(moniker string) {
-	e.Payload.Moniker = moniker
+func (e *RoundWinnerEvent) Enrich(params EnrichmentParams) {
+	e.Payload.WinnerPlayerName = params.PlayerName
+	e.Payload.SystemMoniker = params.SystemMoniker
 	e.Payload.Timestamp = time.Now().UnixMilli()
+	// remove the winning player id at the enrichment step to avoid leaking information
+	e.Payload.WinningPlayerId = ""
 }
 
 type PlayerRoundScoresEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		Moniker   string `json:"moniker"`
-		Score     int    `json:"score"`
-		Timestamp int64  `json:"timestamp"`
-		PlayerId  string `json:"playerId"`
+		PlayerName string `json:"playerName"`
+		Score      int    `json:"score"`
+		Timestamp  int64  `json:"timestamp"`
+		PlayerId   string `json:"playerId"`
 	} `json:"payload"`
 }
 
@@ -195,19 +204,19 @@ func (e *PlayerRoundScoresEvent) GetPlayerID() string {
 	return e.Payload.PlayerId
 }
 
-func (e *PlayerRoundScoresEvent) Enrich(moniker string) {
+func (e *PlayerRoundScoresEvent) Enrich(params EnrichmentParams) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Payload.Moniker = moniker
+	e.Payload.PlayerName = params.PlayerName
 }
 
 type PlayerWordAcceptedEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		PlayerId  string `json:"playerId"`
-		Moniker   string `json:"moniker"`
-		Word      string `json:"word"`
-		Points    int    `json:"points"`
-		Timestamp int64  `json:"timestamp"`
+		PlayerId   string `json:"playerId"`
+		PlayerName string `json:"playerName"`
+		Word       string `json:"word"`
+		Points     int    `json:"points"`
+		Timestamp  int64  `json:"timestamp"`
 	} `json:"payload"`
 }
 
@@ -223,19 +232,19 @@ func (e *PlayerWordAcceptedEvent) GetPlayerID() string {
 	return e.Payload.PlayerId
 }
 
-func (e *PlayerWordAcceptedEvent) Enrich(moniker string) {
-	e.Payload.Moniker = moniker
+func (e *PlayerWordAcceptedEvent) Enrich(params EnrichmentParams) {
+	e.Payload.PlayerName = params.PlayerName
 	e.Payload.Timestamp = time.Now().UnixMilli()
 }
 
 type PlayerWordRejectedEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		PlayerId  string `json:"playerId"`
-		Moniker   string `json:"moniker"`
-		Word      string `json:"word"`
-		Message   string `json:"message"`
-		Timestamp int64  `json:"timestamp"`
+		PlayerId   string `json:"playerId"`
+		PlayerName string `json:"playerName"`
+		Word       string `json:"word"`
+		Message    string `json:"message"`
+		Timestamp  int64  `json:"timestamp"`
 	} `json:"payload"`
 }
 
@@ -250,18 +259,18 @@ func (e *PlayerWordRejectedEvent) GetPlayerID() string {
 	return e.Payload.PlayerId
 }
 
-func (e *PlayerWordRejectedEvent) Enrich(moniker string) {
-	e.Payload.Moniker = moniker
+func (e *PlayerWordRejectedEvent) Enrich(params EnrichmentParams) {
+	e.Payload.PlayerName = params.PlayerName
 	e.Payload.Timestamp = time.Now().UnixMilli()
 }
 
 type PlayerSubmissionBroadcastEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		PlayerId  string `json:"playerId"`
-		Moniker   string `json:"moniker"`
-		Word      string `json:"word"`
-		Timestamp int64  `json:"timestamp"`
+		PlayerId   string `json:"playerId"`
+		PlayerName string `json:"playerName"`
+		Word       string `json:"word"`
+		Timestamp  int64  `json:"timestamp"`
 	} `json:"payload"`
 }
 
@@ -277,8 +286,8 @@ func (e *PlayerSubmissionBroadcastEvent) GetPlayerID() string {
 	return e.Payload.PlayerId
 }
 
-func (e *PlayerSubmissionBroadcastEvent) Enrich(moniker string) {
-	e.Payload.Moniker = moniker
+func (e *PlayerSubmissionBroadcastEvent) Enrich(params EnrichmentParams) {
+	e.Payload.PlayerName = params.PlayerName
 	e.Payload.Timestamp = time.Now().UnixMilli()
 }
 
@@ -287,7 +296,7 @@ type NextRoundCountdownEvent struct {
 	Payload struct {
 		Timestamp            int64  `json:"timestamp"`
 		RoundIntervalSeconds int    `json:"roundIntervalSeconds"`
-		Moniker              string `json:"moniker"`
+		SystemMoniker        string `json:"systemMoniker"`
 	} `json:"payload"`
 }
 
@@ -303,7 +312,7 @@ func (e *NextRoundCountdownEvent) GetPlayerID() string {
 	return ""
 }
 
-func (e *NextRoundCountdownEvent) Enrich(moniker string) {
+func (e *NextRoundCountdownEvent) Enrich(params EnrichmentParams) {
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	e.Payload.Moniker = moniker
+	e.Payload.SystemMoniker = params.SystemMoniker
 }
