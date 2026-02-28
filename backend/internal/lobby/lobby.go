@@ -17,6 +17,10 @@ import (
 	"github.com/lexyblazy/gowords/internal/events"
 )
 
+const (
+	SystemMoniker = "System 🤖🤖🤖"
+)
+
 type Lobby struct {
 	c     *config.Config
 	rooms map[int]*Room
@@ -121,7 +125,7 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	ok, errorMessage := l.validateMoniker(joinPayload.Payload.Moniker)
+	ok, errorMessage := l.validateMoniker(joinPayload.Payload.PlayerName)
 
 	if !ok {
 
@@ -133,7 +137,7 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 		return toBytes(joinRoomErrorEvent)
 	}
 
-	basePlayer, err := l.addMoniker(joinPayload.Payload.Moniker)
+	basePlayer, err := l.addMoniker(joinPayload.Payload.PlayerName)
 
 	if err != nil {
 		return nil, err
@@ -141,7 +145,8 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 
 	var joinRoomOKEvent events.JoinRoomOK
 	joinRoomOKEvent.Type = events.EventTypeJoinRoomOK
-	joinRoomOKEvent.Payload.Moniker = basePlayer.moniker
+	joinRoomOKEvent.Payload.PlayerName = basePlayer.moniker
+	joinRoomOKEvent.Payload.SystemMoniker = SystemMoniker
 	joinRoomOKEvent.Payload.PlayerId = basePlayer.id
 	joinRoomOKEvent.Payload.Timestamp = time.Now().UnixMilli()
 	joinRoomOKEvent.Payload.RoomId = 0
