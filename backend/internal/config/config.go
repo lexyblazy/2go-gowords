@@ -14,6 +14,7 @@ type Config struct {
 		MaxPlayersPerRoom int `json:"maxPlayersPerRoom"`
 	} `json:"lobby"`
 	Game struct {
+		Rules string `json:"rules"`
 		RoundDurationSeconds int `json:"roundDurationSeconds"`
 		RoundIntervalSeconds int `json:"roundIntervalSeconds"`
 		PrintRoundIntervalSeconds int `json:"printRoundIntervalSeconds"`

@@ -174,18 +174,9 @@ func (gs *GameState) PrintRound(ctx context.Context) {
 }
 
 func (gs *GameState) PrintRules() {
-	rules := `
-Rules:
-You are given a set of words.
-You can use the words to form other words.
-You can only use each word once.
-The minimum word length is 3 letters.
-During the last 30 seconds of the round, a two letter word will be added to expand the possible words.
-Happy Guessing!`
-
 	var event events.GameRulesEvent
 	event.Type = events.GameRules
-	event.Payload.Rules = strings.Split(rules, "\n")
+	event.Payload.Rules = strings.Split(gs.c.Game.Rules, "\n")
 
 	gs.emitEvent(&event)
 
