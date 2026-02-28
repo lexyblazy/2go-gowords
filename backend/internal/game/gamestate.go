@@ -31,7 +31,7 @@ func NewGameState(
 		box:          box,
 		rng:          rng,
 		currentRound: nil,
-		rounds:       make(chan *GameRound, 500),
+		rounds:       make(chan *GameRound, c.Game.RoundCount),
 		emitEvent:    emitEvent,
 		c:            c,
 	}
@@ -58,19 +58,11 @@ func (gs *GameState) NewRound() *GameRound {
 func (gs *GameState) RefillRounds() {
 	for {
 
-		if len(gs.rounds) >= 500 {
-
-			time.Sleep(10 * time.Second)
-			continue
-		}
-
 		r := gs.NewRound()
 
 		if gs.box.GetDistinctCharacterCount(r.words...) >= gs.c.Game.DistinctCharacterCount {
 			gs.rounds <- r
 		}
-		// add a delay to avoid too many rounds being created at once
-		time.Sleep(100 * time.Millisecond)
 
 	}
 }
