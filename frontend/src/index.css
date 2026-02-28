@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* Tailwind v4: class-based dark mode (add .dark on html to enable) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
