@@ -8,7 +8,7 @@ interface Props {
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp);
   // format time to show AM/PM
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 };
 
 export default function ActivityFeed({ feed }: Props) {
@@ -47,7 +47,7 @@ export default function ActivityFeed({ feed }: Props) {
         if (item.type === "otherPlayerSubmission") {
           return (
             <div className="flex items-baseline gap-2 text-sm" key={item.id}>
-              <span className="text-xs text-slate-400 w-10 shrink-0">
+              <span className="text-xs text-slate-400 w-12 shrink-0">
                 {formatTime(item.timestamp)}
               </span>
 
