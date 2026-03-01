@@ -63,9 +63,9 @@ export default function ActivityFeed({ feed }: Props) {
               </span>
 
               <span className="font-semibold text-slate-800 dark:text-slate-200">
-                {item.displayName}
+                {item.displayName}:
               </span>
-
+  
               <span className="text-slate-700 dark:text-slate-300 font-medium">
                 {item.message}
               </span>
