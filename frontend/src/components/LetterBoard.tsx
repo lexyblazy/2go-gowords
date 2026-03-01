@@ -7,8 +7,13 @@ export default function LetterBoard({
 }) {
   if (!round) {
     return (
-      <div className="text-center text-slate-500 dark:text-slate-400">
-        Loading...
+      <div className="flex flex-wrap justify-center gap-3">
+        {[...Array(10)].map((_, i) => (
+          <div
+            key={i}
+            className="w-12 h-12 bg-slate-100 dark:bg-zinc-800 rounded-xl animate-pulse"
+          ></div>
+        ))}
       </div>
     );
   }
