@@ -10,8 +10,11 @@ type Config struct {
 		Port int `json:"port"`
 	} `json:"server"`
 	Lobby struct {
-		RoomCount         int `json:"roomCount"`
-		MaxPlayersPerRoom int `json:"maxPlayersPerRoom"`
+		RoomCount           int    `json:"roomCount"`
+		MaxPlayersPerRoom   int    `json:"maxPlayersPerRoom"`
+		PlayerNameLengthMin int    `json:"playerNameLengthMin"`
+		PlayerNameLengthMax int    `json:"playerNameLengthMax"`
+		SystemMoniker       string `json:"systemMoniker"`
 	} `json:"lobby"`
 	Game struct {
 		Rules                     string `json:"rules"`

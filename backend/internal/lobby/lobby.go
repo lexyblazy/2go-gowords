@@ -17,10 +17,6 @@ import (
 	"github.com/lexyblazy/gowords/internal/events"
 )
 
-const (
-	SystemMoniker = "System 🤖🤖🤖"
-)
-
 type Lobby struct {
 	c     *config.Config
 	rooms map[int]*Room
@@ -66,13 +62,14 @@ func (l *Lobby) validateMoniker(moniker string) (bool, string) {
 
 	moniker = strings.TrimSpace(moniker)
 	length := utf8.RuneCountInString(moniker)
+	maxLength := l.c.Lobby.PlayerNameLengthMax
 
-	if length < 3 {
+	if length < l.c.Lobby.PlayerNameLengthMin {
 		return false, "moniker must be at least 3 characters long"
 	}
 
-	if length > 16 {
-		return false, "moniker must be less than 16 characters long"
+	if length > maxLength {
+		return false, fmt.Sprintf("moniker must be less than %d characters long", maxLength)
 	}
 
 	for _, r := range moniker {
@@ -81,8 +78,14 @@ func (l *Lobby) validateMoniker(moniker string) (bool, string) {
 		}
 	}
 
+	inUseMessage := moniker + " is already in use. Please choose a different moniker."
+
+	if moniker == l.c.Lobby.SystemMoniker {
+		return false, inUseMessage
+	}
+
 	if _, ok := l.monikers[moniker]; ok {
-		return false, moniker + " is already in use. Please choose a different moniker."
+		return false, inUseMessage
 	}
 
 	return true, ""
@@ -146,7 +149,7 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 	var joinRoomOKEvent events.JoinRoomOK
 	joinRoomOKEvent.Type = events.EventTypeJoinRoomOK
 	joinRoomOKEvent.Payload.PlayerName = basePlayer.moniker
-	joinRoomOKEvent.Payload.SystemMoniker = SystemMoniker
+	joinRoomOKEvent.Payload.SystemMoniker = l.c.Lobby.SystemMoniker
 	joinRoomOKEvent.Payload.PlayerId = basePlayer.id
 	joinRoomOKEvent.Payload.Timestamp = time.Now().UnixMilli()
 	joinRoomOKEvent.Payload.RoomId = 0

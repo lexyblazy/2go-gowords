@@ -4,14 +4,17 @@
   },
   "lobby": {
     "roomCount": 1,
-    "maxPlayersPerRoom": 100
+    "maxPlayersPerRoom": 100,
+    "playerNameLengthMin": 3,
+    "playerNameLengthMax": 20,
+    "systemMoniker": "🤖Game Master🤖"
   },
   "game": {
     "roundDurationSeconds": 120,
     "roundIntervalSeconds": 20,
     "printRoundIntervalSeconds": 5,
     "rules": "You are given a set of letters. \n You can use the letters to form words. \n The minimum word length is 3 letters. \n Towards the end of the round, two letters will be added to expand the possible words. \n You can only use each word once. \n Happy Guessing!",
-    "wordLength": 6,
+    "wordLength": 7,
     "wordCount": 2,
     "distinctCharacterCount": 10,
     "roundCount": 50

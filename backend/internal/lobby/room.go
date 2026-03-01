@@ -77,7 +77,7 @@ func (r *Room) AddPlayer(player *Player) {
 	event.Type = events.GameRules
 	event.Payload.Rules = strings.Split(r.c.Game.Rules, "\n")
 	event.Payload.Timestamp = time.Now().UnixMilli()
-	event.Payload.SystemMoniker = SystemMoniker
+	event.Payload.SystemMoniker = r.c.Lobby.SystemMoniker
 	r.BroadcastToPlayer(player.id, &event)
 
 	// broadcast the current round info to the player immediately
@@ -112,7 +112,7 @@ func (r *Room) Broadcast(event events.EnrichableEvent) {
 		playerName = player.moniker
 	}
 
-	event.Enrich(events.EnrichmentParams{PlayerName: playerName, SystemMoniker: SystemMoniker})
+	event.Enrich(events.EnrichmentParams{PlayerName: playerName, SystemMoniker: r.c.Lobby.SystemMoniker})
 
 	switch destination {
 	case events.EventDestinationAll:
