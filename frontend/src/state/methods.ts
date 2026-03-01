@@ -15,6 +15,11 @@ import type {
 
 const MAX_FEED_ITEMS = 500;
 
+const addDriftTime = (endsAt: number) => {
+  const randomDriftTime = Math.random() * 1500;
+  return endsAt + randomDriftTime;
+};
+
 const makeGameRulesFeedItem = (event: GameRulesEvent): FeedItem => {
   const message = event.payload.rules.join("\n");
 
@@ -63,17 +68,22 @@ const makePlayerSubmissionBroadcastFeedItem = (
 const makeNextRoundCountdownFeedItem = (
   event: NextRoundCountdownEvent,
 ): FeedItem => {
+  const remaining = Math.max(
+    0,
+    Math.floor((addDriftTime(event.payload.endsAt) - Date.now()) / 1000),
+  );
+
   return {
     id: crypto.randomUUID(),
     timestamp: event.payload.timestamp,
     displayName: event.payload.systemMoniker,
-    message: `Next round in ${event.payload.roundIntervalSeconds} seconds`,
+    message: `Next round in ${remaining} seconds`,
     type: "system",
   };
 };
 
 const makeJoinRoomOkFeedItem = (event: RoomJoinOkEvent): FeedItem => {
-  const message = `You have joined Room ${event.payload.roomId} as ${event.payload.playerName}`;
+  const message = `You have joined Room #${event.payload.roomId} as ${event.payload.playerName}`;
 
   return {
     id: crypto.randomUUID(),
@@ -153,6 +163,8 @@ export function getFeedItem(event: ServerEvent): FeedItem | undefined {
       return makePlayerRoundScoresFeedItem(event);
     case "DISCONNECTED":
       return makeDisconnectedFeedItem(event);
+    case "ROUND_INFO":
+      return;
     default:
       console.log("Unknown event: ", event);
       return undefined;
@@ -175,9 +187,12 @@ export function getNewState(state: AppState, event: ServerEvent): AppState {
     newState.round = {
       words: event.payload.words,
       validWordsCount: event.payload.validWordsCount,
-      endsAt: event.payload.endsAt,
+      endsAt: addDriftTime(event.payload.endsAt),
     };
   } else if (event.type === "ROUND_OVER") {
+    newState.round = undefined;
+  } else if (event.type === "NEXT_ROUND_COUNTDOWN") {
+    newState.nextRoundStartsAt = addDriftTime(event.payload.endsAt);
     newState.round = undefined;
   }
 

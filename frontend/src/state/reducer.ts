@@ -11,6 +11,7 @@ export interface AppState {
   feed: FeedItem[];
   isRoundActive: boolean;
   playerScore: number;
+  nextRoundStartsAt?: number;
 }
 
 export const initialState: AppState = {

@@ -101,7 +101,7 @@ export interface PlayerSubmissionBroadcastEvent {
 export interface NextRoundCountdownEvent {
   type: "NEXT_ROUND_COUNTDOWN";
   payload: BasePayload & {
-    roundIntervalSeconds: number;
+    endsAt: number;
     systemMoniker: string;
   };
 }
