@@ -80,6 +80,9 @@ func (r *Room) AddPlayer(player *Player) {
 	event.Payload.SystemMoniker = SystemMoniker
 	r.BroadcastToPlayer(player.id, &event)
 
+	// broadcast the current round info to the player immediately
+	r.gs.BroadcastRoundInfo()
+
 }
 
 func (r *Room) RemovePlayer(player *Player) {

@@ -74,7 +74,7 @@ func (gs *GameState) PlayCurrentRound() {
 	ctx, cancel := context.WithTimeout(context.Background(), roundDuration)
 	defer cancel()
 
-	go gs.BroadcastRoundInfo(ctx)
+	go gs.BroadcastRoundInfoPeriodically(ctx)
 
 	// during the last 30 seconds of the round, the expansion word will be added to the words list
 	// and the valid words map will be updated to include the expansion word
@@ -85,6 +85,7 @@ func (gs *GameState) PlayCurrentRound() {
 			return
 		default:
 			gs.currentRound.ExpandWords()
+			gs.BroadcastRoundInfo()
 		}
 	}(ctx)
 
@@ -119,6 +120,9 @@ func (gs *GameState) Run() {
 
 		gs.currentRound = <-gs.rounds
 		gs.currentRound.endsAt = time.Now().Add(time.Duration(gs.c.Game.RoundDurationSeconds) * time.Second).UnixMilli()
+
+		// broadcast the round info immediately
+		gs.BroadcastRoundInfo()
 		gs.PlayCurrentRound()
 
 		var event events.RoundOverEvent
@@ -131,7 +135,7 @@ func (gs *GameState) Run() {
 
 		var nxtRoundCntDwn events.NextRoundCountdownEvent
 		nxtRoundCntDwn.Type = events.NextRoundCountdown
-		nxtRoundCntDwn.Payload.RoundIntervalSeconds = gs.c.Game.RoundIntervalSeconds
+		nxtRoundCntDwn.Payload.EndsAt = time.Now().Add(time.Duration(gs.c.Game.RoundIntervalSeconds) * time.Second).UnixMilli()
 		gs.emitEvent(&nxtRoundCntDwn)
 		// Sleep for the round interval before starting a new round
 		time.Sleep(time.Duration(gs.c.Game.RoundIntervalSeconds) * time.Second)
@@ -139,11 +143,27 @@ func (gs *GameState) Run() {
 	}
 }
 
-func (gs *GameState) BroadcastRoundInfo(ctx context.Context) {
+func (gs *GameState) BroadcastRoundInfo() {
 
 	if gs.currentRound == nil {
 		return
 	}
+
+	words := []string{}
+	for _, word := range gs.currentRound.words {
+		words = append(words, word.Text)
+	}
+
+	var event events.RoundInfoEvent
+	event.Type = events.RoundInfo
+	event.Payload.Words = words
+	event.Payload.ValidWordsCount = len(gs.currentRound.validWords)
+	event.Payload.EndsAt = gs.currentRound.endsAt
+	gs.emitEvent(&event)
+
+}
+
+func (gs *GameState) BroadcastRoundInfoPeriodically(ctx context.Context) {
 
 	for {
 
@@ -151,19 +171,9 @@ func (gs *GameState) BroadcastRoundInfo(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
+			gs.BroadcastRoundInfo()
 		}
 
-		words := []string{}
-		for _, word := range gs.currentRound.words {
-			words = append(words, word.Text)
-		}
-
-		var event events.RoundInfoEvent
-		event.Type = events.RoundInfo
-		event.Payload.Words = words
-		event.Payload.ValidWordsCount = len(gs.currentRound.validWords)
-		event.Payload.EndsAt = gs.currentRound.endsAt
-		gs.emitEvent(&event)
 		time.Sleep(time.Duration(gs.c.Game.PrintRoundIntervalSeconds) * time.Second)
 
 	}

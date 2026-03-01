@@ -281,10 +281,10 @@ func (e *PlayerWordRejectedEvent) Enrich(params EnrichmentParams) {
 type PlayerSubmissionBroadcastEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		PlayerId   string `json:"playerId"`
-		PlayerName string `json:"playerName"`
-		Word       string `json:"word"`
-		Timestamp  int64  `json:"timestamp"`
+		PlayerId      string `json:"playerId"`
+		PlayerName    string `json:"playerName"`
+		Word          string `json:"word"`
+		Timestamp     int64  `json:"timestamp"`
 		SystemMoniker string `json:"systemMoniker"`
 	} `json:"payload"`
 }
@@ -310,9 +310,9 @@ func (e *PlayerSubmissionBroadcastEvent) Enrich(params EnrichmentParams) {
 type NextRoundCountdownEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		Timestamp            int64  `json:"timestamp"`
-		RoundIntervalSeconds int    `json:"roundIntervalSeconds"`
-		SystemMoniker        string `json:"systemMoniker"`
+		Timestamp     int64  `json:"timestamp"`
+		SystemMoniker string `json:"systemMoniker"`
+		EndsAt        int64  `json:"endsAt"`
 	} `json:"payload"`
 }
 
