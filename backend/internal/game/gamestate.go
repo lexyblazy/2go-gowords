@@ -115,9 +115,6 @@ func (gs *GameState) Run() {
 
 	for {
 
-		gs.BroadcastRules()
-		time.Sleep(5 * time.Second)
-
 		gs.currentRound = <-gs.rounds
 		gs.currentRound.endsAt = time.Now().Add(time.Duration(gs.c.Game.RoundDurationSeconds) * time.Second).UnixMilli()
 
@@ -137,6 +134,7 @@ func (gs *GameState) Run() {
 		nxtRoundCntDwn.Type = events.NextRoundCountdown
 		nxtRoundCntDwn.Payload.EndsAt = time.Now().Add(time.Duration(gs.c.Game.RoundIntervalSeconds) * time.Second).UnixMilli()
 		gs.emitEvent(&nxtRoundCntDwn)
+		gs.BroadcastRules()
 		// Sleep for the round interval before starting a new round
 		time.Sleep(time.Duration(gs.c.Game.RoundIntervalSeconds) * time.Second)
 
