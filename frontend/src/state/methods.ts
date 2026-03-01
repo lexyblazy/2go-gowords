@@ -2,7 +2,6 @@ import type { AppState } from "./reducer";
 import type {
   FeedItem,
   GameRulesEvent,
-  RoundInfoEvent,
   RoundOverEvent,
   RoundWinnerEvent,
   ServerEvent,
@@ -14,16 +13,7 @@ import type {
   PlayerRoundScoresEvent,
 } from "./types";
 
-// const makeRoundInfoFeedItem = (event: RoundInfoEvent): FeedItem => {
-//   const message = `The words are: ${event.payload.words.join(" ")}. There are ${event.payload.validWordsCount} possible valid words.`;
-//   return {
-//     id: crypto.randomUUID(),
-//     timestamp: event.payload.timestamp,
-//     displayName: event.payload.systemMoniker,
-//     message,
-//     type: "system",
-//   };
-// };
+const MAX_FEED_ITEMS = 500;
 
 const makeGameRulesFeedItem = (event: GameRulesEvent): FeedItem => {
   const message = event.payload.rules.join("\n");
@@ -171,16 +161,21 @@ export function getFeedItem(event: ServerEvent): FeedItem | undefined {
 
 export function getNewState(state: AppState, event: ServerEvent): AppState {
   const newFeedItem = getFeedItem(event);
+  const updatedFeed = newFeedItem ? [...state.feed, newFeedItem] : state.feed;
 
   const newState: AppState = {
     ...state,
-    feed: newFeedItem ? [...state.feed, newFeedItem] : state.feed,
+    feed:
+      updatedFeed.length > MAX_FEED_ITEMS
+        ? updatedFeed.slice(-MAX_FEED_ITEMS)
+        : updatedFeed,
   };
 
   if (event.type === "ROUND_INFO") {
     newState.round = {
       words: event.payload.words,
       validWordsCount: event.payload.validWordsCount,
+      endsAt: event.payload.endsAt,
     };
   } else if (event.type === "ROUND_OVER") {
     newState.round = undefined;
