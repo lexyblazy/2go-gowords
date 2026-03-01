@@ -14,14 +14,14 @@ type Config struct {
 		MaxPlayersPerRoom int `json:"maxPlayersPerRoom"`
 	} `json:"lobby"`
 	Game struct {
-		Rules string `json:"rules"`
-		RoundDurationSeconds int `json:"roundDurationSeconds"`
-		RoundIntervalSeconds int `json:"roundIntervalSeconds"`
-		PrintRoundIntervalSeconds int `json:"printRoundIntervalSeconds"`
-		WordLength int `json:"wordLength"`
-		WordCount int `json:"wordCount"`
-		DistinctCharacterCount int `json:"distinctCharacterCount"`
-		RoundCount int `json:"roundCount"` // number of rounds that must be available in the rounds channel
+		Rules                     string `json:"rules"`
+		RoundDurationSeconds      int    `json:"roundDurationSeconds"`
+		RoundIntervalSeconds      int    `json:"roundIntervalSeconds"`
+		PrintRoundIntervalSeconds int    `json:"printRoundIntervalSeconds"`
+		WordLength                int    `json:"wordLength"`
+		WordCount                 int    `json:"wordCount"`
+		DistinctCharacterCount    int    `json:"distinctCharacterCount"`
+		RoundCount                int    `json:"roundCount"` // number of rounds that must be available in the rounds channel
 	} `json:"game"`
 	Dictionary struct {
 		FileName string `json:"fileName"`
