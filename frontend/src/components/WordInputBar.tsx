@@ -53,6 +53,7 @@ export default function WordInputBar({ isRoundActive, sendWord }: Props) {
           placeholder={
             isRoundActive ? "Type a word..." : "Waiting for next round..."
           }
+          autoFocus
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
