@@ -1,5 +1,4 @@
 import LetterBoard from "../components/LetterBoard";
-import ScoreBar from "../components/ScoreBar";
 import ActivityFeed from "../components/ActivityFeed";
 import WordInputBar from "../components/WordInputBar";
 import type { AppState } from "../state/reducer";
@@ -11,7 +10,6 @@ export default function GameScreen({ state }: { state: AppState }) {
       {/* 🔒 Static Top Section */}
       <div className="border-b border-slate-200 dark:border-zinc-700 p-4 space-y-3">
         <LetterBoard round={state.round} />
-        <ScoreBar score={state.playerScore} />
       </div>
 
       {/* 🧾 Scrollable Feed */}

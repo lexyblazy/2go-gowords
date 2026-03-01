@@ -34,6 +34,7 @@ export interface RoundInfoEvent {
     systemMoniker: string;
     words: string[];
     validWordsCount: number;
+    endsAt: number;
   };
 }
 
@@ -125,10 +126,17 @@ export interface FeedItem {
   timestamp: number;
   displayName: string;
   message: string;
-  type?: "system" | "wordAccepted" | "wordRejected" | "disconnected" | "otherPlayerSubmission" | "rules";
+  type?:
+    | "system"
+    | "wordAccepted"
+    | "wordRejected"
+    | "disconnected"
+    | "otherPlayerSubmission"
+    | "rules";
 }
 
 export interface RoundState {
   words: string[];
   validWordsCount: number;
+  endsAt: number;
 }

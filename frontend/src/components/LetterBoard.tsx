@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { RoundState } from "../state/types";
 
 export default function LetterBoard({
@@ -5,6 +6,22 @@ export default function LetterBoard({
 }: {
   round: RoundState | undefined;
 }) {
+  const [remaining, setRemaining] = useState(0);
+
+  useEffect(() => {
+    if (!round?.endsAt) return;
+
+    const interval = setInterval(() => {
+      const seconds = Math.max(
+        0,
+        Math.floor((round.endsAt - Date.now()) / 1000),
+      );
+      setRemaining(seconds);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [round?.endsAt]);
+
   if (!round) {
     return (
       <div className="flex flex-wrap justify-center gap-3">
@@ -45,6 +62,15 @@ export default function LetterBoard({
 
       <div className="text-sm text-slate-500 dark:text-slate-400">
         There are {round.validWordsCount} possible valid words
+      </div>
+      <div
+        className={
+          remaining <= 10
+            ? "text-red-500 font-semibold animate-pulse"
+            : "text-slate-500 dark:text-slate-400"
+        }
+      >
+        Ends in {remaining} seconds
       </div>
     </div>
   );
