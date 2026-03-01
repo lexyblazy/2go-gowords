@@ -9,7 +9,7 @@ export default function GameScreen({ state }: { state: AppState }) {
     <div className="flex flex-col h-screen bg-white dark:bg-zinc-900 text-slate-900 dark:text-slate-100">
       {/* 🔒 Static Top Section */}
       <div className="border-b border-slate-200 dark:border-zinc-700 p-4 space-y-3">
-        <LetterBoard round={state.round} />
+        <LetterBoard round={state.round} nextRoundStartsAt={state.nextRoundStartsAt} />
       </div>
 
       {/* 🧾 Scrollable Feed */}
