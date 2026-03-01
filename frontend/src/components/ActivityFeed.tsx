@@ -13,21 +13,10 @@ const formatTime = (timestamp: number) => {
 
 export default function ActivityFeed({ feed }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const isNearBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight <
-      100;
-
-    if (isNearBottom) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: "smooth",
-      });
-    }
+    bottomRef.current?.scrollIntoView({ behavior: "auto" });
   }, [feed]);
 
   function getItemClass(item: FeedItem) {
@@ -65,7 +54,7 @@ export default function ActivityFeed({ feed }: Props) {
               <span className="font-semibold text-slate-800 dark:text-slate-200">
                 {item.displayName}:
               </span>
-  
+
               <span className="text-slate-700 dark:text-slate-300 font-medium">
                 {item.message}
               </span>
@@ -109,6 +98,7 @@ export default function ActivityFeed({ feed }: Props) {
           </div>
         );
       })}
+      <div ref={bottomRef} />
     </div>
   );
 }
