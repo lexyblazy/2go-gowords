@@ -114,6 +114,7 @@ type RoundInfoEvent struct {
 		ValidWordsCount int      `json:"validWordsCount"`
 		Timestamp       int64    `json:"timestamp"`
 		SystemMoniker   string   `json:"systemMoniker"`
+		EndsAt          int64    `json:"endsAt"`
 	} `json:"payload"`
 }
 

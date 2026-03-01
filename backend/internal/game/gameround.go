@@ -18,6 +18,7 @@ type GameRound struct {
 
 	submissionChan chan *events.PlayerWordSubmissionEvent
 	emitEvent      func(event events.EnrichableEvent)
+	endsAt         int64
 }
 
 func (gr *GameRound) makeWordRejectedEvent(message string, playerId string, word string) {

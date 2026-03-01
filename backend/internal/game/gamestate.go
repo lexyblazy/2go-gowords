@@ -74,7 +74,7 @@ func (gs *GameState) PlayCurrentRound() {
 	ctx, cancel := context.WithTimeout(context.Background(), roundDuration)
 	defer cancel()
 
-	go gs.PrintRound(ctx)
+	go gs.BroadcastRoundInfo(ctx)
 
 	// during the last 30 seconds of the round, the expansion word will be added to the words list
 	// and the valid words map will be updated to include the expansion word
@@ -118,6 +118,7 @@ func (gs *GameState) Run() {
 		time.Sleep(5 * time.Second)
 
 		gs.currentRound = <-gs.rounds
+		gs.currentRound.endsAt = time.Now().Add(time.Duration(gs.c.Game.RoundDurationSeconds) * time.Second).UnixMilli()
 		gs.PlayCurrentRound()
 
 		var event events.RoundOverEvent
@@ -138,7 +139,7 @@ func (gs *GameState) Run() {
 	}
 }
 
-func (gs *GameState) PrintRound(ctx context.Context) {
+func (gs *GameState) BroadcastRoundInfo(ctx context.Context) {
 
 	if gs.currentRound == nil {
 		return
@@ -161,6 +162,7 @@ func (gs *GameState) PrintRound(ctx context.Context) {
 		event.Type = events.RoundInfo
 		event.Payload.Words = words
 		event.Payload.ValidWordsCount = len(gs.currentRound.validWords)
+		event.Payload.EndsAt = gs.currentRound.endsAt
 		gs.emitEvent(&event)
 		time.Sleep(time.Duration(gs.c.Game.PrintRoundIntervalSeconds) * time.Second)
 
