@@ -10,7 +10,6 @@ import (
 
 type Dictionary struct {
 	filePath      string
-	uniqueWords   map[string]struct{}
 	WordsByLength map[int][]Word
 }
 
@@ -31,7 +30,6 @@ func NewDictionary(filePath string) *Dictionary {
 	// initialize the dictionary
 	d := &Dictionary{
 		filePath:      filePath,
-		uniqueWords:   make(map[string]struct{}),
 		WordsByLength: make(map[int][]Word),
 	}
 
@@ -75,7 +73,6 @@ func (d *Dictionary) loadFromFile(filePath string) error {
 	for scanner.Scan() {
 		word := d.NormalizeWord(scanner.Text())
 		if d.IsValidWord(word) {
-			d.uniqueWords[word] = struct{}{}
 			d.WordsByLength[len(word)] = append(d.WordsByLength[len(word)], NewWord(word))
 
 		}
