@@ -57,7 +57,7 @@ export default function ActivityFeed({ feed }: Props) {
       {feed.map((item) => {
         if (item.type === "otherPlayerSubmission") {
           return (
-            <div className="flex items-baseline gap-2 text-sm">
+            <div className="flex items-baseline gap-2 text-sm" key={item.id}>
               <span className="text-xs text-slate-400 w-10 shrink-0">
                 {formatTime(item.timestamp)}
               </span>
@@ -75,7 +75,7 @@ export default function ActivityFeed({ feed }: Props) {
 
         if (item.type === "rules") {
           return (
-            <div className="px-4 py-3">
+            <div className="px-4 py-3" key={item.id}>
               <div
                 className="
     max-w-2xl mx-auto
