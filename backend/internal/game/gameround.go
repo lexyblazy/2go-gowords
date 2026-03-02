@@ -94,14 +94,14 @@ func (gr *GameRound) AwardPoints(word string, playerId string) {
 }
 
 func (gr *GameRound) ReportScores() {
-	winningPlayerId := ""
+	winnerPlayerId := ""
 	winningScore := 0
 
 	for playerId, score := range gr.scores {
 
 		if score > winningScore {
 			winningScore = score
-			winningPlayerId = playerId
+			winnerPlayerId = playerId
 		}
 
 		// send each player their score
@@ -117,7 +117,7 @@ func (gr *GameRound) ReportScores() {
 	if winningScore > 0 {
 		var event events.RoundWinnerEvent
 		event.Type = events.RoundWinner
-		event.Payload.WinningPlayerId = winningPlayerId
+		event.Payload.WinnerPlayerId = winnerPlayerId
 		event.Payload.Score = winningScore
 		gr.emitEvent(&event)
 	}

@@ -164,7 +164,7 @@ func (e *RoundOverEvent) Enrich(params EnrichmentParams) {
 type RoundWinnerEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		WinningPlayerId  string `json:"playerId"`
+		WinnerPlayerId  string `json:"winnerPlayerId"`
 		WinnerPlayerName string `json:"winnerPlayerName"`
 		Score            int    `json:"score"`
 		Timestamp        int64  `json:"timestamp"`
@@ -181,15 +181,14 @@ func (e *RoundWinnerEvent) GetDestination() EventDestination {
 }
 
 func (e *RoundWinnerEvent) GetPlayerID() string {
-	return e.Payload.WinningPlayerId
+	return e.Payload.WinnerPlayerId
 }
 
 func (e *RoundWinnerEvent) Enrich(params EnrichmentParams) {
 	e.Payload.WinnerPlayerName = params.PlayerName
 	e.Payload.SystemMoniker = params.SystemMoniker
 	e.Payload.Timestamp = time.Now().UnixMilli()
-	// remove the winning player id at the enrichment step to avoid leaking information
-	e.Payload.WinningPlayerId = ""
+
 }
 
 type PlayerRoundScoresEvent struct {
