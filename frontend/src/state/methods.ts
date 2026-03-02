@@ -1,3 +1,4 @@
+import { soundManager } from "../lib/sound";
 import type { AppState } from "./reducer";
 import type {
   FeedItem,
@@ -18,6 +19,25 @@ const MAX_FEED_ITEMS = 500;
 const addDriftTime = (endsAt: number) => {
   const randomDriftTime = Math.random() * 1500;
   return endsAt + randomDriftTime;
+};
+
+export const playSound = (event: ServerEvent) => {
+  switch (event.type) {
+    case "PLAYER_WORD_ACCEPTED":
+      soundManager.play("accepted");
+      break;
+    case "PLAYER_WORD_REJECTED":
+      soundManager.play("rejected");
+      break;
+    case "PLAYER_ROUND_SCORES":
+      soundManager.play("roundScores");
+      break;
+    case "ROUND_INFO":
+      // do nothing
+      break;
+    default:
+      soundManager.play("default");
+  }
 };
 
 const makeGameRulesFeedItem = (event: GameRulesEvent): FeedItem => {
@@ -42,8 +62,17 @@ const makeRoundOverFeedItem = (event: RoundOverEvent): FeedItem => {
   };
 };
 
-const makeRoundWinnerFeedItem = (event: RoundWinnerEvent): FeedItem => {
-  const message = `🏆🥇 Kudos to ${event.payload.winnerPlayerName} for winning the round with ${event.payload.score} points! 🏆🥇`;
+const makeRoundWinnerFeedItem = (
+  event: RoundWinnerEvent,
+  playerId: string | undefined,
+): FeedItem => {
+  let message: string = `🏆 Kudos to ${event.payload.winnerPlayerName} for winning the round with ${event.payload.score} points! 🏆`;
+
+  if (playerId === event.payload.winnerPlayerId) {
+    message = `🥇🥇 You won the round with ${event.payload.score} points! 🥇🥇`;
+    soundManager.stop("roundScores");
+    soundManager.play("winner");
+  }
   return {
     id: crypto.randomUUID(),
     timestamp: event.payload.timestamp,
@@ -141,14 +170,17 @@ const makeDisconnectedFeedItem = (event: ServerEvent): FeedItem => {
   };
 };
 
-export function getFeedItem(event: ServerEvent): FeedItem | undefined {
+export function getFeedItem(
+  event: ServerEvent,
+  playerId?: string,
+): FeedItem | undefined {
   switch (event.type) {
     case "GAME_RULES":
       return makeGameRulesFeedItem(event);
     case "ROUND_OVER":
       return makeRoundOverFeedItem(event);
     case "ROUND_WINNER":
-      return makeRoundWinnerFeedItem(event);
+      return makeRoundWinnerFeedItem(event, playerId);
     case "PLAYER_SUBMISSION_BROADCAST":
       return makePlayerSubmissionBroadcastFeedItem(event);
     case "NEXT_ROUND_COUNTDOWN":
@@ -172,7 +204,7 @@ export function getFeedItem(event: ServerEvent): FeedItem | undefined {
 }
 
 export function getNewState(state: AppState, event: ServerEvent): AppState {
-  const newFeedItem = getFeedItem(event);
+  const newFeedItem = getFeedItem(event, state.playerId);
   const updatedFeed = newFeedItem ? [...state.feed, newFeedItem] : state.feed;
 
   const newState: AppState = {

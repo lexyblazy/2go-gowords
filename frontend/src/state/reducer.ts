@@ -1,6 +1,6 @@
 import type { FeedItem, RoundState, ServerEvent } from "./types";
 import { getFeedItem, getNewState } from "./methods";
-
+import { playSound } from "./methods";
 export interface AppState {
   connectionStatus: "connecting" | "connected" | "disconnected";
   playerName?: string;
@@ -23,6 +23,7 @@ export const initialState: AppState = {
 };
 
 export function reducer(state: AppState, event: ServerEvent): AppState {
+  playSound(event);
   switch (event.type) {
     case "CONNECTED":
       return { ...state, connectionStatus: "connected" };
