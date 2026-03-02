@@ -46,7 +46,7 @@ export default function ActivityFeed({ feed }: Props) {
       {feed.map((item) => {
         if (item.type === "otherPlayerSubmission") {
           return (
-            <div className="flex items-baseline gap-2 text-sm" key={item.id}>
+            <div className="flex items-baseline gap-2 text-sm animate-fade-up" key={item.id}>
               <span className="text-xs text-slate-400 w-12 shrink-0">
                 {formatTime(item.timestamp)}
               </span>
@@ -64,7 +64,7 @@ export default function ActivityFeed({ feed }: Props) {
 
         if (item.type === "rules") {
           return (
-            <div className="px-4 py-3" key={item.id}>
+            <div className="px-4 py-3 animate-fade-up" key={item.id}>
               <div
                 className="
     max-w-2xl mx-auto
@@ -86,7 +86,7 @@ export default function ActivityFeed({ feed }: Props) {
         }
 
         return (
-          <div key={item.id} className={getItemClass(item)}>
+          <div key={item.id} className={`${getItemClass(item)} animate-fade-up`}>
             <div className="text-center">
               <span className="font-mono text-xs text-gray-500">
                 {formatTime(item.timestamp)}

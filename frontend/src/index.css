@@ -7,3 +7,18 @@
 html {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+@theme {
+  --animate-fade-up: fadeUp 0.2s ease-out;
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
