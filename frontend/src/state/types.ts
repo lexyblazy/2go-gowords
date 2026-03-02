@@ -50,6 +50,7 @@ export interface RoundWinnerEvent {
   payload: BasePayload & {
     systemMoniker: string;
     winnerPlayerName: string;
+    winnerPlayerId: string;
     score: number;
   };
 }
