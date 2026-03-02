@@ -1,17 +1,25 @@
 // lib/sound.ts
 
-type SoundName = "accepted" | "rejected" | "tick" | "winner";
+type SoundName =
+  | "accepted"
+  | "rejected"
+  | "beep"
+  | "winner"
+  | "rules"
+  | "roundScores";
 
 class SoundManager {
-  private enabled = true;
+  private enabled = false;
   private sounds: Record<SoundName, HTMLAudioElement>;
 
   constructor() {
     this.sounds = {
       accepted: new Audio("/sounds/accepted.wav"),
       rejected: new Audio("/sounds/rejected.wav"),
-      tick: new Audio("/sounds/tick.wav"),
-      winner: new Audio("/sounds/winner.mp3"),
+      beep: new Audio("/sounds/beep.wav"),
+      winner: new Audio("/sounds/winner.wav"),
+      rules: new Audio("/sounds/rules.wav"),
+      roundScores: new Audio("/sounds/score.wav"),
     };
 
     Object.values(this.sounds).forEach((audio) => {
