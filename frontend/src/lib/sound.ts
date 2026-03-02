@@ -5,7 +5,7 @@ type SoundName =
   | "rejected"
   | "beep"
   | "winner"
-  | "rules"
+  | "default"
   | "roundScores";
 
 class SoundManager {
@@ -18,7 +18,7 @@ class SoundManager {
       rejected: new Audio("/sounds/rejected.wav"),
       beep: new Audio("/sounds/beep.wav"),
       winner: new Audio("/sounds/winner.wav"),
-      rules: new Audio("/sounds/rules.wav"),
+      default: new Audio("/sounds/default.wav"),
       roundScores: new Audio("/sounds/score.wav"),
     };
 
