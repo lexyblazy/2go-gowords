@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from "react";
 import { reducer, initialState } from "./state/reducer";
 import { initSocket } from "./socket/socket";
-import ThemeToggle from "./components/ThemeToogle";
+import Controls from "./components/Controls";
 import JoinScreen from "./screens/JoinScreen";
 import GameScreen from "./screens/GameScreen";
 
@@ -14,7 +14,7 @@ export default function App() {
 
   return (
     <>
-      <ThemeToggle />
+      <Controls />
       {state.joinedRoom ? (
         <GameScreen state={state} />
       ) : (
