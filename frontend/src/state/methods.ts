@@ -29,8 +29,8 @@ export const playSound = (event: ServerEvent) => {
     case "PLAYER_WORD_REJECTED":
       soundManager.play("rejected");
       break;
-    case "PLAYER_ROUND_SCORES":
-      soundManager.play("roundScores");
+    case "ROUND_OVER":
+      soundManager.play("over");
       break;
     case "ROUND_INFO":
       // do nothing
@@ -70,7 +70,7 @@ const makeRoundWinnerFeedItem = (
 
   if (playerId === event.payload.winnerPlayerId) {
     message = `🥇🥇 You won the round with ${event.payload.score} points! 🥇🥇`;
-    soundManager.stop("roundScores");
+    soundManager.stop("over");
     soundManager.play("winner");
   }
   return {

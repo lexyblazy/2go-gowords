@@ -6,7 +6,7 @@ type SoundName =
   | "beep"
   | "winner"
   | "default"
-  | "roundScores";
+  | "over";
 
 class SoundManager {
   private enabled = false;
@@ -19,7 +19,7 @@ class SoundManager {
       beep: new Audio("/sounds/beep.wav"),
       winner: new Audio("/sounds/winner.wav"),
       default: new Audio("/sounds/default.wav"),
-      roundScores: new Audio("/sounds/score.wav"),
+      over: new Audio("/sounds/finished.wav"),
     };
 
     Object.values(this.sounds).forEach((audio) => {
