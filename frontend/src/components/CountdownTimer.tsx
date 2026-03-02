@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { soundManager } from "../lib/sound";
 
 export default function CountdownTimer({ endsAt }: { endsAt: number }) {
   const [now, setNow] = useState(Date.now());
@@ -10,6 +11,16 @@ export default function CountdownTimer({ endsAt }: { endsAt: number }) {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const remaining = Math.max(0, Math.floor((endsAt - now) / 1000));
+
+    if (remaining <= 10 && remaining > 0) {
+      soundManager.play("beep");
+    } else {
+      soundManager.stop("beep");
+    }
+  }, [endsAt, now]);
 
   function formatTime(seconds: number) {
     const minutes = Math.floor(seconds / 60);
