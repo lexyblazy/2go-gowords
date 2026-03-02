@@ -11,7 +11,7 @@ export default function LetterBoard({
   if (!round) {
     return (
       <>
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap justify-center gap-2">
           {[...Array(10)].map((_, i) => (
             <div
               key={i}
@@ -30,8 +30,8 @@ export default function LetterBoard({
   const letters = round.words.join("").split("");
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="flex flex-wrap justify-center gap-3">
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         {letters.map((letter, i) => (
           <div
             key={i}

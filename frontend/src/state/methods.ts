@@ -126,7 +126,7 @@ const makeJoinRoomOkFeedItem = (event: RoomJoinOkEvent): FeedItem => {
 const makePlayerWordAcceptedFeedItem = (
   event: PlayerWordAcceptedEvent,
 ): FeedItem => {
-  const message = `🎉 You scored ${event.payload.points} points for the word "${event.payload.word}"! 🎉`;
+  const message = ` +${event.payload.points} "${event.payload.word}" 🎉`;
   return {
     id: crypto.randomUUID(),
     timestamp: event.payload.timestamp,
@@ -143,7 +143,7 @@ const makePlayerWordRejectedFeedItem = (
     id: crypto.randomUUID(),
     timestamp: event.payload.timestamp,
     displayName: event.payload.systemMoniker,
-    message: `❌😞 "${event.payload.word}" was rejected. ${event.payload.message} 😞❌`,
+    message: `❌ "${event.payload.word}" rejected. ${event.payload.message}`,
     type: "wordRejected",
   };
 };

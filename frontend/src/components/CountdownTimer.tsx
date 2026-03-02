@@ -32,9 +32,9 @@ export default function CountdownTimer({ endsAt }: { endsAt: number }) {
 
   return remaining > 0 ? (
     <div
-      className={`font-bold ${
+      className={`text-2xl font-semibold tracking-wide ${
         remaining <= 10
-          ? "text-red-500 text-xl animate-pulse"
+          ? "text-red-500 animate-pulse"
           : "text-slate-500 dark:text-slate-400"
       }`}
     >
