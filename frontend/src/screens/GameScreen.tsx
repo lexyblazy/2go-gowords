@@ -14,7 +14,7 @@ export default function GameScreen({ state }: { state: AppState }) {
 
       {/* 🧾 Scrollable Feed */}
       <div className="flex-1 overflow-y-auto p-4">
-        <ActivityFeed feed={state.feed} />
+        <ActivityFeed feedItems={state.feed} />
       </div>
 
       {/* ⌨️ Input */}
