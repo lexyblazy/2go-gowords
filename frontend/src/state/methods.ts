@@ -205,14 +205,12 @@ export function getFeedItem(
 
 export function getNewState(state: AppState, event: ServerEvent): AppState {
   const newFeedItem = getFeedItem(event, state.playerId);
-  const updatedFeed = newFeedItem ? [...state.feed, newFeedItem] : state.feed;
 
   const newState: AppState = {
     ...state,
-    feed:
-      updatedFeed.length > MAX_FEED_ITEMS
-        ? updatedFeed.slice(-MAX_FEED_ITEMS)
-        : updatedFeed,
+    feed: (newFeedItem ? [...state.feed, newFeedItem] : state.feed).slice(
+      -MAX_FEED_ITEMS,
+    ),
   };
 
   if (event.type === "ROUND_INFO") {
