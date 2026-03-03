@@ -1,11 +1,16 @@
 import type { ServerEvent } from "../state/types";
+const WS_BASE = import.meta.env.VITE_WS_BASE_URL;
 
 type Dispatch = (event: ServerEvent) => void;
 
 let socket: WebSocket | null = null;
 
 export function initSocket(dispatch: Dispatch) {
-  socket = new WebSocket("ws://localhost:8080/ws");
+  const WS_URL = WS_BASE
+    ? `${WS_BASE}/ws`
+    : `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws`;
+
+  socket = new WebSocket(WS_URL);
 
   socket.onopen = () => {
     dispatch({ type: "CONNECTED" });
