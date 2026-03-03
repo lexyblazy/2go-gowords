@@ -17,7 +17,7 @@ export default React.memo(function ActivityFeed({ feedItems }: Props) {
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto p-2 space-y-1.5 h-full"
+      className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto p-2 space-y-1.5 h-full"
     >
       {feedItems.map((item) => (
         <ActivityFeedItem key={item.id} item={item} />

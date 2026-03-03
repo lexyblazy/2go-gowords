@@ -46,9 +46,11 @@ export default React.memo(function WordInputBar({
         dark:bg-zinc-900
         w-full
         max-w-full
+        min-w-0
+        overflow-x-hidden
       "
     >
-      <div className="flex gap-2 w-full max-w-full">
+      <div className="flex gap-2 w-full max-w-full min-w-0">
         <input
           ref={inputRef}
           value={word}
@@ -70,7 +72,7 @@ export default React.memo(function WordInputBar({
             focus:ring-2 focus:ring-blue-500 focus:border-transparent
             dark:bg-zinc-800 dark:border-zinc-600 dark:focus:ring-blue-400
             disabled:opacity-50
-            px-3 py-2 text-sm
+            px-3 py-2 text-base md:text-sm
             pb-safe
           "
         />

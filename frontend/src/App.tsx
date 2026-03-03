@@ -13,18 +13,20 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <div className="min-h-dvh w-full max-w-full min-w-0 overflow-x-hidden flex flex-col">
       <Controls />
-      {state.joinedRoom ? (
-        <GameScreen
-          round={state.round}
-          feedItems={state.feed}
-          nextRoundStartsAt={state.nextRoundStartsAt}
-          playerId={state.playerId}
-        />
-      ) : (
-        <JoinScreen joinError={state.joinError} />
-      )}
-    </>
+      <main className="flex-1 min-w-0 flex flex-col min-h-0">
+        {state.joinedRoom ? (
+          <GameScreen
+            round={state.round}
+            feedItems={state.feed}
+            nextRoundStartsAt={state.nextRoundStartsAt}
+            playerId={state.playerId}
+          />
+        ) : (
+          <JoinScreen joinError={state.joinError} />
+        )}
+      </main>
+    </div>
   );
 }
