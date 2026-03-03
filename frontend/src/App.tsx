@@ -16,9 +16,14 @@ export default function App() {
     <>
       <Controls />
       {state.joinedRoom ? (
-        <GameScreen state={state} />
+        <GameScreen
+          round={state.round}
+          feedItems={state.feed}
+          nextRoundStartsAt={state.nextRoundStartsAt}
+          playerId={state.playerId}
+        />
       ) : (
-        <JoinScreen state={state} />
+        <JoinScreen joinError={state.joinError} />
       )}
     </>
   );

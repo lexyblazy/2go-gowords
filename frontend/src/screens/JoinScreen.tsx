@@ -1,8 +1,7 @@
 import { sendMessage } from "../socket/socket";
-import type { AppState } from "../state/reducer";
 import { useState } from "react";
 
-export default function JoinScreen({ state }: { state: AppState }) {
+export default function JoinScreen({ joinError }: { joinError?: string }) {
   const [name, setName] = useState("");
 
   const handleJoin = () => {
@@ -42,9 +41,7 @@ export default function JoinScreen({ state }: { state: AppState }) {
               dark:bg-zinc-700 dark:border-zinc-600"
           />
 
-          {state.joinError && (
-            <div className="text-sm text-red-500">{state.joinError}</div>
-          )}
+          {joinError && <div className="text-sm text-red-500">{joinError}</div>}
 
           <button
             onClick={handleJoin}
