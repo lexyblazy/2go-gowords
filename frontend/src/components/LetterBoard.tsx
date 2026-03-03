@@ -11,7 +11,7 @@ export default function LetterBoard({
   if (!round) {
     return (
       <>
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="w-full flex flex-wrap justify-center gap-2 ">
           {[...Array(10)].map((_, i) => (
             <div
               key={i}
@@ -36,16 +36,13 @@ export default function LetterBoard({
           <div
             key={i}
             className="
-              w-12 h-12
-              md:w-14 md:h-14
+              w-8 h-8 text-sm
+              sm:w-10 sm:h-10 sm:text-base
+              md:w-12 md:h-12 md:text-2xl
               flex items-center justify-center
-              rounded-xl
-              bg-slate-100
-              dark:bg-zinc-800
-              text-xl md:text-2xl
-              font-bold
-              shadow-sm
-            "
+              rounded-md
+              bg-slate-200 dark:bg-zinc-800
+              font-bold"
           >
             {letter.toUpperCase()}
           </div>
