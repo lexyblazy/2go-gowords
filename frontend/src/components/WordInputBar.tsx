@@ -56,7 +56,6 @@ export default React.memo(function WordInputBar({
           placeholder={
             isRoundActive ? "Type a word..." : "Waiting for next round..."
           }
-          autoFocus
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
@@ -71,6 +70,7 @@ export default React.memo(function WordInputBar({
 
         <button
           onClick={handleSubmit}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={!isRoundActive}
           className="
           px-5 py-3
