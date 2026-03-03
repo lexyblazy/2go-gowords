@@ -40,7 +40,7 @@ func New(c *config.Config) *Lobby {
 
 func (l *Lobby) Init() {
 	go l.allocateRooms()
-	// go l.printStats()
+	go l.printStats()
 
 }
 
@@ -176,18 +176,25 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 func (l *Lobby) printStats() {
 	for {
 
+		totalPlayers := 0
+
 		l.mu.RLock()
 		for index, room := range l.rooms {
 			count := room.GetPlayerCount()
+			totalPlayers += count
 			if count > 0 {
 				fmt.Println("--------------------------------")
-				fmt.Println("There are", count, "players in room", index)
+				fmt.Println("There are", count, "players in room #", index)
 				fmt.Println("--------------------------------")
 			}
 		}
 		l.mu.RUnlock()
 
-		time.Sleep(10 * time.Second)
+		fmt.Println("--------------------------------")
+		fmt.Println("There are", totalPlayers, "currently active players on the server")
+		fmt.Println("--------------------------------")
+
+		time.Sleep(60 * time.Second)
 	}
 }
 
