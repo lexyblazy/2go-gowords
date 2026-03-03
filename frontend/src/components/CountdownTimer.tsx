@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { soundManager } from "../lib/sound";
 
-export default function CountdownTimer({ endsAt }: { endsAt: number }) {
+export default React.memo(function CountdownTimer({ endsAt }: { endsAt: number }) {
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -41,4 +41,4 @@ export default function CountdownTimer({ endsAt }: { endsAt: number }) {
       {formatTime(remaining)}
     </div>
   ) : null;
-}
+});

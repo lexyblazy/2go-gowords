@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import type { FeedItem } from "../state/types";
 
 const formatTime = (timestamp: number) => {
@@ -30,7 +30,11 @@ function getItemClass(item: FeedItem) {
   }
 }
 
-export default function ActivityFeedItem({ item }: { item: FeedItem }) {
+export default React.memo(function ActivityFeedItem({
+  item,
+}: {
+  item: FeedItem;
+}) {
   const [showRules, setShowRules] = useState(false);
 
   if (item.type === "otherPlayerSubmission") {
@@ -61,10 +65,18 @@ export default function ActivityFeedItem({ item }: { item: FeedItem }) {
             leading-relaxed p-3"
         >
           <div className="font-semibold mb-2 text-slate-800 dark:text-slate-200">
-            <button onClick={() => setShowRules((prev) => !prev)}>ℹ️ Game Rules {showRules ? "▲" : "▼"}</button>
+            <button onClick={() => setShowRules((prev) => !prev)}>
+              ℹ️ Game Rules {showRules ? "▲" : "▼"}
+            </button>
           </div>
-          {showRules && <div className="rounded-md bg-slate-100/60 dark:bg-zinc-800/60
-          text-xs leading-snug text-slate-600 dark:text-slate-400">{item.message}</div>}
+          {showRules && (
+            <div
+              className="rounded-md bg-slate-100/60 dark:bg-zinc-800/60
+          text-xs leading-snug text-slate-600 dark:text-slate-400"
+            >
+              {item.message}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -81,4 +93,4 @@ export default function ActivityFeedItem({ item }: { item: FeedItem }) {
       </div>
     </div>
   );
-}
+});
