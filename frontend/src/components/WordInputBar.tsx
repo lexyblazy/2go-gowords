@@ -44,9 +44,11 @@ export default React.memo(function WordInputBar({
         p-3
         bg-white
         dark:bg-zinc-900
+        w-full
+        max-w-full
       "
     >
-      <div className="flex gap-2">
+      <div className="flex gap-2 w-full max-w-full">
         <input
           ref={inputRef}
           value={word}
@@ -60,29 +62,36 @@ export default React.memo(function WordInputBar({
           autoCorrect="off"
           spellCheck={false}
           className="
-            flex-1 rounded-md
+            flex-1 min-w-0
+            rounded-md
             border border-slate-300
-            bg-slate-100 focus:outline-none
+            bg-slate-100
+            focus:outline-none
             focus:ring-2 focus:ring-blue-500 focus:border-transparent
             dark:bg-zinc-800 dark:border-zinc-600 dark:focus:ring-blue-400
-            disabled:opacity-50 px-3 py-2 text-sm pb-safe"
+            disabled:opacity-50
+            px-3 py-2 text-sm
+            pb-safe
+          "
         />
 
         <button
-          onClick={handleSubmit}
+          type="button"
           onMouseDown={(e) => e.preventDefault()}
+          onClick={handleSubmit}
           disabled={!isRoundActive}
           className="
-          px-5 py-3
-          rounded-md
-          font-semibold
-          text-white
-          bg-blue-600
-          active:scale-95
-          transition-transform
-          duration-100
-          shadow-md
-          dark:bg-blue-500
+            shrink-0
+            px-5 py-3
+            rounded-md
+            font-semibold
+            text-white
+            bg-blue-600
+            active:scale-95
+            transition-transform
+            duration-100
+            shadow-md
+            dark:bg-blue-500
           "
         >
           Send

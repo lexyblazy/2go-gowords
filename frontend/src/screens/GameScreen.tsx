@@ -32,7 +32,7 @@ export default function GameScreen({
   );
 
   return (
-    <div className="flex flex-col h-dvh w-full max-w-full overflow-x-hidden bg-white dark:bg-zinc-900 text-slate-900 dark:text-slate-100">
+    <div className="flex flex-col min-h-dvh w-full max-w-full overflow-x-hidden bg-white dark:bg-zinc-900 text-slate-900 dark:text-slate-100">
       {/* 🖥 Desktop LetterBoard (Top) */}
       <div className="hidden md:block shrink-0 border-b border-slate-200 dark:border-zinc-700 p-4">
         <LetterBoard round={round} nextRoundStartsAt={nextRoundStartsAt} />

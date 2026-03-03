@@ -3,9 +3,17 @@
 /* Tailwind v4: class-based dark mode (add .dark on html to enable) */
 @custom-variant dark (&:where(.dark, .dark *));
 
-
+body {
+  overscroll-behavior-x: none;
+}
 html {
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 @theme {
