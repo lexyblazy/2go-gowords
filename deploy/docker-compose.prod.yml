@@ -1,0 +1,16 @@
+services:
+  backend:
+    build:
+      context: ../backend
+    container_name: gowords-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8080"
+
+  frontend:
+    build:
+      context: ../frontend
+    container_name: gowords-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:3000"
