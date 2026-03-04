@@ -7,7 +7,6 @@ interface Props {
 }
 
 export default React.memo(function ActivityFeed({ feedItems }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -15,10 +14,7 @@ export default React.memo(function ActivityFeed({ feedItems }: Props) {
   }, [feedItems.length]);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 overflow-y-auto p-2 space-y-1.5 h-full"
-    >
+    <div className="min-w-0 space-y-1.5">
       {feedItems.map((item) => (
         <ActivityFeedItem key={item.id} item={item} />
       ))}
