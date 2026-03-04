@@ -32,14 +32,14 @@ export default function GameScreen({
   );
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 w-full max-w-full min-w-0 overflow-x-hidden bg-white dark:bg-zinc-900 text-slate-900 dark:text-slate-100">
+    <div className="flex flex-col flex-1 min-h-0 w-full max-w-full min-w-0 overflow-hidden bg-white dark:bg-zinc-900 text-slate-900 dark:text-slate-100">
       {/* 🖥 Desktop LetterBoard (Top) */}
       <div className="hidden md:block shrink-0 min-w-0 border-b border-slate-200 dark:border-zinc-700 p-4">
         <LetterBoard round={round} nextRoundStartsAt={nextRoundStartsAt} />
       </div>
 
-      {/* 🧾 Scrollable Feed */}
-      <div className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto px-4 py-2">
+      {/* 🧾 Scrollable Feed — only this area scrolls */}
+      <div className="flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto px-4 py-2">
         <ActivityFeed feedItems={feedItems} />
       </div>
 

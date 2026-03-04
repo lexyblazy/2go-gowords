@@ -13,9 +13,9 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-dvh w-full max-w-full min-w-0 overflow-x-hidden flex flex-col">
+    <div className="h-dvh min-h-0 w-full max-w-full min-w-0 overflow-hidden flex flex-col">
       <Controls />
-      <main className="flex-1 min-w-0 flex flex-col min-h-0">
+      <main className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
         {state.joinedRoom ? (
           <GameScreen
             round={state.round}
