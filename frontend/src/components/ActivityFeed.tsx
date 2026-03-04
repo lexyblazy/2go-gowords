@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import type { FeedItem } from "../state/types";
 import ActivityFeedItem from "./ActivityFeedItem";
 
@@ -8,9 +8,8 @@ interface Props {
 
 export default React.memo(function ActivityFeed({ feedItems }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "auto" });
+  useLayoutEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" });
   }, [feedItems.length]);
 
   return (
