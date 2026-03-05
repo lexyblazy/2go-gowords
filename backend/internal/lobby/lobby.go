@@ -116,7 +116,7 @@ func (l *Lobby) addMoniker(moniker string) (*Player, error) {
 }
 
 func (l *Lobby) removeMoniker(moniker string) {
-	delete(l.monikers, moniker)
+	delete(l.monikers, strings.ToLower(moniker))
 }
 
 func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
