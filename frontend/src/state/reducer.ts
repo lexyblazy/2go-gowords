@@ -1,6 +1,5 @@
-import type { FeedItem, RoundState, ServerEvent } from "./types";
+import type { FeedItem, RoundState, ServerEvent, BatchEvents } from "./types";
 import { getFeedItem, getNewState } from "./methods";
-import { playSound } from "./methods";
 export interface AppState {
   connectionStatus: "connecting" | "connected" | "disconnected";
   playerName?: string;
@@ -22,8 +21,10 @@ export const initialState: AppState = {
   playerScore: 0,
 };
 
-export function reducer(state: AppState, event: ServerEvent): AppState {
-  playSound(event);
+export function reducer(
+  state: AppState,
+  event: ServerEvent | BatchEvents,
+): AppState {
   switch (event.type) {
     case "CONNECTED":
       return { ...state, connectionStatus: "connected" };
@@ -52,6 +53,11 @@ export function reducer(state: AppState, event: ServerEvent): AppState {
         connectionStatus: "disconnected",
         feed: [...state.feed, getFeedItem(event)!],
       };
+    // batch events are used to reduce the number of re-renders
+    case "BATCH_EVENTS":
+      return event.payload.reduce((acc, event) => {
+        return getNewState(acc, event);
+      }, state);
 
     default:
       return getNewState(state, event);

@@ -107,6 +107,11 @@ export interface NextRoundCountdownEvent {
   };
 }
 
+export interface BatchEvents {
+  type: "BATCH_EVENTS";
+  payload: ServerEvent[];
+}
+
 export type ServerEvent =
   | GameRulesEvent
   | RoundInfoEvent

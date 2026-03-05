@@ -204,6 +204,8 @@ export function getFeedItem(
 }
 
 export function getNewState(state: AppState, event: ServerEvent): AppState {
+  playSound(event);
+
   const newFeedItem = getFeedItem(event, state.playerId);
 
   const newState: AppState = {
