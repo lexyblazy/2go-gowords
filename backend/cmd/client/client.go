@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/lexyblazy/gowords/internal/bot"
+	"github.com/lexyblazy/gowords/internal/dictionary"
 	"github.com/lexyblazy/gowords/internal/events"
 )
 
@@ -18,6 +20,7 @@ type Client struct {
 	sendMsgCh chan []byte
 	moniker   string
 	playerId  string
+	bot       *bot.Bot
 }
 
 func (c *Client) Run() error {
@@ -82,7 +85,11 @@ func (c *Client) handleMessage(message []byte) error {
 		c.playerId = incomingMessage.Payload.PlayerId
 		log.Println("Joined Room #", incomingMessage.Payload.RoomId, "as", incomingMessage.Payload.PlayerName)
 	default:
-		log.Println(string(message))
+		if c.bot != nil {
+			c.bot.HandleMessage(message)
+		} else {
+			log.Println(string(message))
+		}
 	}
 
 	return nil
@@ -120,16 +127,57 @@ func (c *Client) ReceiveMessages() error {
 }
 
 func createConnection() (*websocket.Conn, error) {
-	conn, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/ws", nil)
+	wsUrl := "ws://localhost:8080/ws"
+	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, nil)
 	if err != nil {
 		return nil, err
 	}
 	return conn, nil
 }
 
+func (c *Client) submitWord(text string) {
+
+	if c.playerId == "" {
+		log.Println("Player ID is required")
+		return
+	}
+
+	var playerWordSubmissionEvent events.PlayerWordSubmissionEvent
+	playerWordSubmissionEvent.Type = events.PlayerWordSubmission
+	playerWordSubmissionEvent.Payload.PlayerId = c.playerId
+	playerWordSubmissionEvent.Payload.Word = text
+
+	playerWordSubmissionMessage, err := json.Marshal(playerWordSubmissionEvent)
+	if err != nil {
+		log.Println("Error marshalling player word submission message:", err)
+		return
+	}
+	c.sendMsgCh <- playerWordSubmissionMessage
+}
+
+func (c *Client) readInput() {
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		err := scanner.Err()
+		if err != nil {
+			log.Println("Error reading input:", err)
+			continue
+		}
+
+		if err != nil {
+			log.Println("Error marshalling player word submission message payload:", err)
+			continue
+		}
+
+		c.submitWord(scanner.Text())
+	}
+}
+
 func main() {
 
 	moniker := flag.String("moniker", "", "Moniker for the client")
+	botMode := flag.Bool("bot", false, "Run as a bot")
 	flag.Parse()
 
 	if moniker == nil || *moniker == "" {
@@ -143,36 +191,20 @@ func main() {
 		moniker:   *moniker,
 	}
 
+	if *botMode {
+		bot := bot.NewBot(dictionary.NewDictionary("dictionary.txt"), client.submitWord)
+		client.bot = bot
+		go bot.PlayRound()
+	} else {
+		// take input from stdin and send it to the server
+		go client.readInput()
+	}
+
 	go func() {
 		if err := client.Run(); err != nil {
 			log.Println("Error running client:", err)
 		}
 
-	}()
-
-	// take input from stdin and send it to the server
-	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			err := scanner.Err()
-			if err != nil {
-				log.Println("Error reading input:", err)
-				continue
-			}
-
-			var playerWordSubmissionEvent events.PlayerWordSubmissionEvent
-			playerWordSubmissionEvent.Type = events.PlayerWordSubmission
-			playerWordSubmissionEvent.Payload.PlayerId = client.playerId
-			playerWordSubmissionEvent.Payload.Word = scanner.Text()
-
-			playerWordSubmissionMessage, err := json.Marshal(playerWordSubmissionEvent)
-			if err != nil {
-				log.Println("Error marshalling player word submission message payload:", err)
-				continue
-			}
-
-			client.sendMsgCh <- playerWordSubmissionMessage
-		}
 	}()
 
 	for message := range client.sendMsgCh {
