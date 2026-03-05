@@ -1,9 +1,9 @@
+import { useCallback, useLayoutEffect, useRef } from "react";
 import LetterBoard from "../components/LetterBoard";
 import ActivityFeed from "../components/ActivityFeed";
 import WordInputBar from "../components/WordInputBar";
 import { sendMessage } from "../socket/socket";
 import type { FeedItem, RoundState } from "../state/types";
-import { useCallback } from "react";
 
 interface Props {
   round?: RoundState;
@@ -31,6 +31,20 @@ export default function GameScreen({
     [playerId],
   );
 
+  const feedScrollRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const container = feedScrollRef.current;
+    if (!container) return;
+
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    if (distanceFromBottom < 80) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [feedItems.length]);
+
   return (
     <div className="flex flex-col flex-1 min-h-0 w-full max-w-full min-w-0 overflow-hidden bg-white dark:bg-zinc-900 text-slate-900 dark:text-slate-100">
       {/* 🖥 Desktop LetterBoard (Top) */}
@@ -39,7 +53,10 @@ export default function GameScreen({
       </div>
 
       {/* 🧾 Scrollable Feed — only this area scrolls */}
-      <div className="flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto px-4 py-2">
+      <div
+        ref={feedScrollRef}
+        className="flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain px-4 py-2 [overflow-anchor:none]"
+      >
         <ActivityFeed feedItems={feedItems} />
       </div>
 
