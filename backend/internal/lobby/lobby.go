@@ -84,7 +84,7 @@ func (l *Lobby) validateMoniker(moniker string) (bool, string) {
 		return false, inUseMessage
 	}
 
-	if _, ok := l.monikers[moniker]; ok {
+	if _, ok := l.monikers[strings.ToLower(moniker)]; ok {
 		return false, inUseMessage
 	}
 
@@ -107,7 +107,7 @@ func (l *Lobby) addMoniker(moniker string) (*Player, error) {
 		return nil, errors.New("error generating UUID")
 	}
 
-	l.monikers[moniker] = uuid
+	l.monikers[strings.ToLower(moniker)] = uuid
 
 	return &Player{
 		moniker: moniker,
