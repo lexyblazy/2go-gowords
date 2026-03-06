@@ -1,7 +1,6 @@
 package lobby
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,10 +10,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	// "github.com/gorilla/websocket"
 	"github.com/lexyblazy/gowords/internal/config"
 	"github.com/lexyblazy/gowords/internal/dictionary"
 	"github.com/lexyblazy/gowords/internal/events"
+	"github.com/lexyblazy/gowords/internal/helpers"
 )
 
 type Lobby struct {
@@ -101,7 +100,7 @@ func toBytes(event any) ([]byte, error) {
 
 func (l *Lobby) addMoniker(moniker string) (*Player, error) {
 
-	uuid, err := newUUID()
+	uuid, err := helpers.NewUUIDV4()
 
 	if err != nil {
 		return nil, errors.New("error generating UUID")
@@ -196,24 +195,4 @@ func (l *Lobby) printStats() {
 
 		time.Sleep(60 * time.Second)
 	}
-}
-
-func newUUID() (string, error) {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-
-	// Set version (4) and variant bits (RFC 4122)
-	b[6] = (b[6] & 0x0f) | 0x40
-	b[8] = (b[8] & 0x3f) | 0x80
-
-	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
-		b[0:4],
-		b[4:6],
-		b[6:8],
-		b[8:10],
-		b[10:16],
-	), nil
 }
