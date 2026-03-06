@@ -29,6 +29,9 @@ type Config struct {
 	Dictionary struct {
 		FileName string `json:"fileName"`
 	} `json:"dictionary"`
+	Db struct {
+		FileName string `json:"fileName"`
+	} `json:"db"`
 }
 
 func New(path string) *Config {
