@@ -8,6 +8,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const (
+	LEADERBOARD_DAILY  = "leaderboard:daily"
+	LEADERBOARD_WEEKLY = "leaderboard:weekly"
+)
+
 type RedisStore struct {
 	conn *redis.Client
 }
@@ -52,4 +57,45 @@ func (rs *RedisStore) Get(ctx context.Context, key string) (string, error) {
 
 	return val, nil
 
+}
+
+func (rs *RedisStore) UpdateLeaderBoards(ctx context.Context, scoresMap map[string]int) error {
+	pipe := rs.conn.Pipeline()
+
+	for userId, score := range scoresMap {
+
+		pipe.ZAddArgs(ctx, LEADERBOARD_DAILY, redis.ZAddArgs{
+			GT: true,
+			Members: []redis.Z{
+				{
+
+					Score:  float64(score),
+					Member: userId,
+				},
+			},
+		})
+
+		pipe.ZAddArgs(ctx, LEADERBOARD_WEEKLY, redis.ZAddArgs{
+			GT: true,
+			Members: []redis.Z{
+				{
+
+					Score:  float64(score),
+					Member: userId,
+				},
+			},
+		})
+
+	}
+
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+func (rs *RedisStore) GetDailyTop(ctx context.Context, rdb *redis.Client) ([]redis.Z, error) {
+	return rdb.ZRevRangeWithScores(ctx, LEADERBOARD_DAILY, 0, 9).Result()
+}
+
+func (rs *RedisStore) GetWeeklyTop(ctx context.Context, rdb *redis.Client) ([]redis.Z, error) {
+	return rdb.ZRevRangeWithScores(ctx, LEADERBOARD_WEEKLY, 0, 9).Result()
 }

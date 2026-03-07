@@ -10,6 +10,7 @@ import (
 	"github.com/lexyblazy/gowords/internal/dictionary"
 	"github.com/lexyblazy/gowords/internal/events"
 	"github.com/lexyblazy/gowords/internal/game"
+	"github.com/lexyblazy/gowords/internal/store"
 )
 
 type Room struct {
@@ -25,6 +26,8 @@ type Room struct {
 	unregisterChan chan *Player
 
 	removeFromLobbyFunc func(moniker string)
+
+	rs *store.RedisStore
 }
 
 type OutgoingMessage struct {
@@ -37,7 +40,7 @@ type OutgoingMessage struct {
 	} `json:"payload"`
 }
 
-func NewRoom(c *config.Config, id int, d *dictionary.Dictionary, removeFromLobbyFunc func(moniker string)) *Room {
+func NewRoom(c *config.Config, id int, d *dictionary.Dictionary, removeFromLobbyFunc func(moniker string), rs *store.RedisStore) *Room {
 
 	return &Room{
 		id:                  id,
@@ -47,6 +50,7 @@ func NewRoom(c *config.Config, id int, d *dictionary.Dictionary, removeFromLobby
 		registerChan:        make(chan *Player),
 		unregisterChan:      make(chan *Player),
 		removeFromLobbyFunc: removeFromLobbyFunc,
+		rs:                  rs,
 	}
 }
 
@@ -128,7 +132,7 @@ func (r *Room) Broadcast(event events.EnrichableEvent) {
 func (r *Room) Run() {
 
 	go r.PrintPlayers()
-	r.gs = game.NewGameState(r.c, r.d, r.Broadcast)
+	r.gs = game.NewGameState(r.c, r.d, r.Broadcast, r.rs)
 
 	go func() {
 		for {

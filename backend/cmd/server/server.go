@@ -32,7 +32,7 @@ func main() {
 		log.Fatal("Db err", err)
 	}
 
-	l := lobby.New(c, db)
+	l := lobby.New(c, db, rs)
 	l.Init()
 
 	s := server.New(db, rs, c.Server.Port, l)

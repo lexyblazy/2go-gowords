@@ -9,6 +9,7 @@ import (
 	"github.com/lexyblazy/gowords/internal/config"
 	"github.com/lexyblazy/gowords/internal/dictionary"
 	"github.com/lexyblazy/gowords/internal/events"
+	"github.com/lexyblazy/gowords/internal/store"
 )
 
 type GameState struct {
@@ -18,11 +19,14 @@ type GameState struct {
 	currentRound *GameRound
 	c            *config.Config
 	emitEvent    func(event events.EnrichableEvent)
+
+	rs *store.RedisStore
 }
 
 func NewGameState(
 	c *config.Config, d *dictionary.Dictionary,
 	emitEvent func(event events.EnrichableEvent),
+	rs *store.RedisStore,
 ) *GameState {
 	rng := rand.New(rand.NewSource(NewSeed()))
 	box := NewGamebox(d, rng)
@@ -34,6 +38,7 @@ func NewGameState(
 		rounds:       make(chan *GameRound, c.Game.RoundCount),
 		emitEvent:    emitEvent,
 		c:            c,
+		rs:           rs,
 	}
 }
 
@@ -52,6 +57,7 @@ func (gs *GameState) NewRound() *GameRound {
 		submissionChan:          make(chan *events.PlayerWordSubmissionEvent),
 		scores:                  make(map[string]int),
 		emitEvent:               gs.emitEvent,
+		updateLeaderBoards:      gs.updateLeaderBoards,
 	}
 }
 
@@ -184,4 +190,10 @@ func (gs *GameState) BroadcastRules() {
 
 	gs.emitEvent(&event)
 
+}
+
+func (gs *GameState) updateLeaderBoards(scoresMap map[string]int) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	gs.rs.UpdateLeaderBoards(ctx, scoresMap)
 }

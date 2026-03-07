@@ -26,9 +26,10 @@ type Lobby struct {
 	monikers map[string]string
 
 	db *store.SqlDb
+	rs *store.RedisStore
 }
 
-func New(c *config.Config, db *store.SqlDb) *Lobby {
+func New(c *config.Config, db *store.SqlDb, rs *store.RedisStore) *Lobby {
 	d := dictionary.NewDictionary(c.Dictionary.FileName)
 
 	return &Lobby{
@@ -38,6 +39,7 @@ func New(c *config.Config, db *store.SqlDb) *Lobby {
 		mu:       &sync.RWMutex{},
 		monikers: make(map[string]string),
 		db:       db,
+		rs: rs,
 	}
 }
 
@@ -52,7 +54,7 @@ func (l *Lobby) allocateRooms() {
 		if len(l.rooms) < l.c.Lobby.RoomCount {
 			l.mu.Lock()
 			roomId := len(l.rooms) + 1
-			room := NewRoom(l.c, roomId, l.d, l.removeMoniker)
+			room := NewRoom(l.c, roomId, l.d, l.removeMoniker, l.rs)
 			l.rooms[roomId] = room
 			go room.Run()
 			l.mu.Unlock()

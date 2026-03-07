@@ -19,6 +19,8 @@ type GameRound struct {
 	submissionChan chan *events.PlayerWordSubmissionEvent
 	emitEvent      func(event events.EnrichableEvent)
 	endsAt         int64
+
+	updateLeaderBoards func(scores map[string]int)
 }
 
 func (gr *GameRound) makeWordRejectedEvent(message string, playerId string, word string) {
@@ -121,6 +123,10 @@ func (gr *GameRound) ReportScores() {
 		event.Payload.Score = winningScore
 		gr.emitEvent(&event)
 	}
+
+	// update leaderboards
+	gr.updateLeaderBoards(gr.scores)
+
 
 }
 
