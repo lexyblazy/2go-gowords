@@ -256,3 +256,29 @@ func (s *Server) resetPassword(r *http.Request, w http.ResponseWriter) (any, int
 	return res, http.StatusOK, nil
 
 }
+
+func (s *Server) getLeaderboards(r *http.Request, w http.ResponseWriter) (any, int, error) {
+
+	if r.Method != http.MethodGet {
+		return nil, http.StatusNotFound, errors.New("not found")
+	}
+
+	daily, err := s.rs.GetDailyLeaderBoard(r.Context())
+
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.New("failed to get daily leaderboard")
+	}
+
+	weekly, err := s.rs.GetWeeklyLeaderboard(r.Context())
+
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.New("failed to get weekly leaderboard")
+	}
+
+	res := make(map[string]any)
+
+	res["daily"] = daily
+	res["weekly"] = weekly
+
+	return res, http.StatusOK, nil
+}

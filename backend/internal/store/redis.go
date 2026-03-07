@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -17,6 +18,13 @@ const (
 
 type RedisStore struct {
 	conn *redis.Client
+}
+
+type LeaderboardEntry struct {
+	UserId  string `json:"userId"`
+	Moniker string `json:"moniker"`
+	Score   int    `json:"score"`
+	Rank    int    `json:"rank"`
 }
 
 func NewRedisStore(url string) (*RedisStore, error) {
@@ -98,10 +106,82 @@ func (rs *RedisStore) UpdateLeaderBoards(ctx context.Context, scoresMap map[stri
 	return err
 }
 
-func (rs *RedisStore) GetDailyTop(ctx context.Context, rdb *redis.Client) ([]redis.Z, error) {
-	return rdb.ZRevRangeWithScores(ctx, LEADERBOARD_DAILY, 0, 9).Result()
+func (rs *RedisStore) aggregateLeaderBoardFromSet(ctx context.Context, set []redis.Z) ([]*LeaderboardEntry, error) {
+
+	entries := make([]*LeaderboardEntry, 0)
+	if len(set) == 0 {
+		return entries, nil
+	}
+	ids := make([]string, 0, len(set))
+
+	for i, z := range set {
+		userId := z.Member.(string)
+		entry := &LeaderboardEntry{
+			UserId: userId,
+			Score:  int(z.Score),
+			Rank:   i + 1,
+		}
+		ids = append(ids, userId)
+		entries = append(entries, entry)
+	}
+
+	monikers, err := rs.getUserMonikers(ctx, ids...)
+	idsToMonikers := make(map[string]string)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < len(monikers); i++ {
+
+		moniker := monikers[i]
+
+		if moniker == nil || moniker == redis.Nil {
+			moniker = fmt.Sprintf("Guest:%s", ids[i])
+		}
+		idsToMonikers[ids[i]] = moniker.(string)
+	}
+
+	// modify the entry in place
+	for i := 0; i < len(entries); i++ {
+		entries[i].Moniker = idsToMonikers[entries[i].UserId]
+	}
+
+	return entries, nil
+
 }
 
-func (rs *RedisStore) GetWeeklyTop(ctx context.Context, rdb *redis.Client) ([]redis.Z, error) {
-	return rdb.ZRevRangeWithScores(ctx, LEADERBOARD_WEEKLY, 0, 9).Result()
+func (rs *RedisStore) GetDailyLeaderBoard(ctx context.Context) (any, error) {
+
+	daily, err := rs.getDailyTop(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.aggregateLeaderBoardFromSet(ctx, daily)
+
+}
+
+func (rs *RedisStore) GetWeeklyLeaderboard(ctx context.Context) (any, error) {
+	weekly, err := rs.getWeeklyTop(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.aggregateLeaderBoardFromSet(ctx, weekly)
+
+}
+
+func (rs *RedisStore) getDailyTop(ctx context.Context) ([]redis.Z, error) {
+	return rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_DAILY, 0, 9).Result()
+}
+
+func (rs *RedisStore) getWeeklyTop(ctx context.Context) ([]redis.Z, error) {
+	return rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_WEEKLY, 0, 9).Result()
+}
+
+func (rs *RedisStore) getUserMonikers(ctx context.Context, ids ...string) ([]any, error) {
+	return rs.conn.HMGet(ctx, USERS_MONIKERS, ids...).Result()
 }
