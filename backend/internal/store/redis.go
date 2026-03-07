@@ -74,13 +74,28 @@ func (rs *RedisStore) Get(ctx context.Context, key string) (string, error) {
 
 }
 
+func getLeaderBoardKeys() (daily string, weekly string) {
+	now := time.Now()
+
+	daily = fmt.Sprintf("%s:%s", LEADERBOARD_DAILY, now.Format("2006-01-02"))
+
+	year, week := now.ISOWeek()
+
+	weekly = fmt.Sprintf("%s:%d-%02d", LEADERBOARD_WEEKLY, year, week)
+
+	return daily, weekly
+
+}
+
 func (rs *RedisStore) UpdateLeaderBoards(ctx context.Context, scoresMap map[string]int) error {
 	pipe := rs.conn.Pipeline()
 
+	dailyKey, weeklyKey := getLeaderBoardKeys()
+
 	for userId, score := range scoresMap {
 
-		pipe.ZIncrBy(ctx, LEADERBOARD_DAILY, float64(score), userId)
-		pipe.ZIncrBy(ctx, LEADERBOARD_WEEKLY, float64(score), userId)
+		pipe.ZIncrBy(ctx, dailyKey, float64(score), userId)
+		pipe.ZIncrBy(ctx, weeklyKey, float64(score), userId)
 		pipe.ZAddArgs(ctx, LEADERBOARD_ALL_TIME_HIGH_SCORES, redis.ZAddArgs{
 			GT: true,
 			Members: []redis.Z{
@@ -145,7 +160,8 @@ func (rs *RedisStore) aggregateLeaderBoardFromSet(ctx context.Context, set []red
 
 func (rs *RedisStore) GetDailyLeaderBoard(ctx context.Context) ([]*LeaderboardEntry, error) {
 
-	set, err := rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_DAILY, 0, 9).Result()
+	dailyKey, _ := getLeaderBoardKeys()
+	set, err := rs.conn.ZRevRangeWithScores(ctx, dailyKey, 0, 9).Result()
 
 	if err != nil {
 		return nil, err
@@ -156,7 +172,9 @@ func (rs *RedisStore) GetDailyLeaderBoard(ctx context.Context) ([]*LeaderboardEn
 }
 
 func (rs *RedisStore) GetWeeklyLeaderboard(ctx context.Context) ([]*LeaderboardEntry, error) {
-	set, err := rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_WEEKLY, 0, 9).Result()
+
+	_, weeklyKey := getLeaderBoardKeys()
+	set, err := rs.conn.ZRevRangeWithScores(ctx, weeklyKey, 0, 9).Result()
 
 	if err != nil {
 		return nil, err
