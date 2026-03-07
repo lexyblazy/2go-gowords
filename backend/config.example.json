@@ -17,9 +17,15 @@
     "wordLength": 7,
     "wordCount": 2,
     "distinctCharacterCount": 10,
-    "roundCount": 50
+    "roundCount": 10
   },
   "dictionary": {
     "fileName": "dictionary.txt"
+  },
+  "db": {
+    "dsn": "gowords.db"
+  },
+  "redis": {
+    "url": "redis://localhost:6380"
   }
 }

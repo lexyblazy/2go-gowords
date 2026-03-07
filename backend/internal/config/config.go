@@ -30,8 +30,11 @@ type Config struct {
 		FileName string `json:"fileName"`
 	} `json:"dictionary"`
 	Db struct {
-		FileName string `json:"fileName"`
+		DSN string `json:"dsn"`
 	} `json:"db"`
+	Redis struct {
+		URL string `json:"url"`
+	} `json:"redis"`
 }
 
 func New(path string) *Config {

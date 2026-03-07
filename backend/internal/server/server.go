@@ -7,20 +7,22 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/lexyblazy/gowords/internal/store"
 	"github.com/lexyblazy/gowords/internal/lobby"
+	"github.com/lexyblazy/gowords/internal/store"
 )
 
 type Server struct {
-	db   *store.SqlDb
-	port int
+	db    *store.SqlDb
+	rs    *store.RedisStore
+	port  int
 	lobby *lobby.Lobby
 }
 
-func New(db *store.SqlDb, port int, l *lobby.Lobby) *Server {
+func New(db *store.SqlDb, redis *store.RedisStore, port int, l *lobby.Lobby) *Server {
 	return &Server{
-		db:   db,
-		port: port,
+		db:    db,
+		rs:    redis,
+		port:  port,
 		lobby: l,
 	}
 }
