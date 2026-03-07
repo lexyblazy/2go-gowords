@@ -57,11 +57,11 @@ func (s *Server) loadRoutes(router *http.ServeMux) {
 	})
 }
 
-func (s *Server) jsonHandler(fn func(r *http.Request) (any, int, error)) http.HandlerFunc {
+func (s *Server) jsonHandler(fn func(r *http.Request, w http.ResponseWriter) (any, int, error)) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		data, statusCode, err := fn(r)
+		data, statusCode, err := fn(r, w)
 
 		w.WriteHeader(statusCode)
 

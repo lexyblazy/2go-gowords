@@ -4,12 +4,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	// "log"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/lexyblazy/gowords/internal/helpers"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/lexyblazy/gowords/internal/store"
 )
 
 type body struct {
@@ -21,7 +24,34 @@ func normalizeUserName(username string) string {
 	return strings.ToLower(strings.TrimSpace(username))
 }
 
-func (s *Server) login(r *http.Request) (any, int, error) {
+func (s *Server) createSession(r *http.Request, w http.ResponseWriter, user store.UserEntity) error {
+	sessionToken, err := helpers.NewUUIDV4()
+
+	if err != nil {
+		return err
+	}
+
+	sessionAge := 24 * time.Hour
+	err = s.rs.Set(r.Context(), fmt.Sprintf("sessions:%s", sessionToken), user.ID, sessionAge)
+
+	if err != nil {
+		return err
+	}
+
+	cookie := &http.Cookie{
+		Name:     "session",
+		Value:    sessionToken,
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   int(sessionAge.Seconds()),
+	}
+
+	http.SetCookie(w, cookie)
+
+	return nil
+}
+
+func (s *Server) login(r *http.Request, w http.ResponseWriter) (any, int, error) {
 
 	if r.Method != http.MethodPost {
 		return nil, http.StatusNotFound, errors.New("not found")
@@ -51,11 +81,23 @@ func (s *Server) login(r *http.Request) (any, int, error) {
 		return nil, http.StatusUnauthorized, errors.New("check username/password combination")
 	}
 
-	return user, http.StatusOK, nil
+	err = s.createSession(r, w, user)
+
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.New("failed to create session")
+	}
+
+	var res map[string]string = make(map[string]string)
+
+	res["id"] = user.ID
+	res["moniker"] = user.Moniker
+	res["username"] = user.Username
+
+	return res, http.StatusOK, nil
 
 }
 
-func (s *Server) register(r *http.Request) (any, int, error) {
+func (s *Server) register(r *http.Request, w http.ResponseWriter) (any, int, error) {
 
 	if r.Method != http.MethodPost {
 		return nil, http.StatusNotFound, errors.New("not found")
@@ -67,6 +109,14 @@ func (s *Server) register(r *http.Request) (any, int, error) {
 
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
+	}
+
+	if len(reqBody.Username) < 3 {
+		return nil, http.StatusUnprocessableEntity, errors.New("username must be at least 3 characters long")
+	}
+
+	if len(reqBody.Password) < 6 {
+		return nil, http.StatusUnprocessableEntity, errors.New("password must be at least 6 characters long")
 	}
 
 	user, err := s.db.GetUserByUsername(normalizeUserName(reqBody.Username))
@@ -99,14 +149,46 @@ func (s *Server) register(r *http.Request) (any, int, error) {
 
 	}
 
-	return newUser, http.StatusOK, nil
+	err = s.createSession(r, w, newUser)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	var res map[string]string = make(map[string]string)
+
+	res["id"] = newUser.ID
+	res["moniker"] = newUser.Moniker
+	res["username"] = newUser.Username
+
+	return res, http.StatusOK, nil
 }
 
-func (s *Server) logout(r *http.Request) (any, int, error) {
+func (s *Server) logout(r *http.Request, w http.ResponseWriter) (any, int, error) {
 	if r.Method != http.MethodPost {
 		return nil, http.StatusNotFound, errors.New("not found")
 
 	}
+
+	cookie, err := r.Cookie("session")
+
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.New("something went wrong")
+	}
+
+	sessionToken := cookie.Value
+
+	if sessionToken == "" {
+		return nil, http.StatusUnauthorized, errors.New("no session found")
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:   "session",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+
+	s.rs.Delete(r.Context(), fmt.Sprintf("sessions:%s", sessionToken))
 
 	return "OK", http.StatusOK, nil
 }

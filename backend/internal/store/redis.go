@@ -28,9 +28,13 @@ func NewRedisStore(url string) (*RedisStore, error) {
 		return nil, err
 	}
 
-	return &RedisStore{}, nil
+	return &RedisStore{conn: rdb}, nil
 }
 
-func (rs *RedisStore) Set(ctx context.Context, key string, value string) {
+func (rs *RedisStore) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+	return rs.conn.Set(ctx, key, value, ttl).Err()
+}
 
+func (rs *RedisStore) Delete(ctx context.Context, key string) error {
+	return rs.conn.Del(ctx, key).Err()
 }
