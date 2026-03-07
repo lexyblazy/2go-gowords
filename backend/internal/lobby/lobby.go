@@ -98,8 +98,15 @@ func toBytes(event any) ([]byte, error) {
 	return bytes, nil
 }
 
-func (l *Lobby) addMoniker(moniker string) (*Player, error) {
+func (l *Lobby) addMoniker(player *Player, moniker string) (*Player, error) {
 
+	// this is an existing user in our system
+	if player.id != "" && player.moniker != "" {
+		l.monikers[strings.ToLower(player.moniker)] = player.id
+		return player, nil
+	}
+
+	// for guest players
 	uuid, err := helpers.NewUUIDV4()
 
 	if err != nil {
@@ -139,7 +146,7 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 		return toBytes(joinRoomErrorEvent)
 	}
 
-	basePlayer, err := l.addMoniker(joinPayload.Payload.PlayerName)
+	basePlayer, err := l.addMoniker(player, joinPayload.Payload.PlayerName)
 
 	if err != nil {
 		return nil, err

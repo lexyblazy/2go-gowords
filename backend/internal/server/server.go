@@ -52,7 +52,24 @@ func (s *Server) loadRoutes(router *http.ServeMux) {
 			return
 		}
 
-		player := lobby.NewPlayer(conn, nil, "", "", s.lobby)
+		var (
+			moniker  string
+			playerId string
+		)
+
+		token := getCookie(r, "session")
+		userId, err := s.rs.Get(r.Context(), fmt.Sprintf("sessions:%s", token))
+
+		if len(userId) > 0 {
+			user, err := s.db.GetUserById(userId)
+
+			if err == nil {
+				playerId = user.ID
+				moniker = user.Moniker
+			}
+		}
+
+		player := lobby.NewPlayer(conn, nil, moniker, playerId, s.lobby)
 		go player.ReadPump()
 		player.WritePump()
 
@@ -95,6 +112,7 @@ func (s *Server) Start() {
 		Handler: mux,
 	}
 
+	log.Println("Server is running on 🚀", s.port)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
