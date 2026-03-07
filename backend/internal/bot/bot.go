@@ -128,7 +128,7 @@ func (b *Bot) submitSolutions() {
 		}
 		b.cr.UsedWords[word] = struct{}{}
 		b.submitWordCb(word)
-		time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+		time.Sleep(time.Duration(500+rand.Intn(500)) * time.Millisecond)
 
 	}
 }

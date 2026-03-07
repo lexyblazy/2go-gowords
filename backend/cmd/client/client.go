@@ -2,9 +2,14 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
+	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -15,21 +20,78 @@ import (
 	"github.com/lexyblazy/gowords/internal/events"
 )
 
+const SERVER_URL = "localhost:8080"
+
 type Client struct {
 	conn      *websocket.Conn
 	sendMsgCh chan []byte
 	moniker   string
 	playerId  string
+	password  string
 	bot       *bot.Bot
+}
+
+func (c *Client) login() (http.Header, error) {
+	var params map[string]string = make(map[string]string)
+	params["username"] = c.moniker
+	params["password"] = c.password
+
+	reqBody, _ := json.Marshal(params)
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("http://%s/login", SERVER_URL),
+		bytes.NewBuffer(reqBody),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		io.Copy(os.Stdout, res.Body)
+		return nil, errors.New("Failed to login")
+	}
+
+	cookieHeader := ""
+	for _, c := range res.Cookies() {
+		cookieHeader += c.Name + "=" + c.Value + "; "
+	}
+	header := http.Header{}
+	header.Set("Cookie", cookieHeader)
+
+	return header, nil
+
 }
 
 func (c *Client) Run() error {
 
-	log.Println("Connecting...")
+	var headers http.Header = nil
+
+	// attempt a login
+	log.Println("Logging in..")
+	h, err := c.login()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	headers = h
 
 	if c.conn == nil {
 
-		conn, err := createConnection()
+		log.Println("Connecting...")
+		conn, err := createConnection(headers)
 
 		if err != nil {
 			log.Println("Error creating connection:", err)
@@ -126,9 +188,9 @@ func (c *Client) ReceiveMessages() error {
 
 }
 
-func createConnection() (*websocket.Conn, error) {
-	wsUrl := "ws://localhost:8080/ws"
-	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, nil)
+func createConnection(headers http.Header) (*websocket.Conn, error) {
+	wsUrl := fmt.Sprintf("ws://%s/ws", SERVER_URL)
+	conn, _, err := websocket.DefaultDialer.Dial(wsUrl, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +240,7 @@ func main() {
 
 	moniker := flag.String("moniker", "", "Moniker for the client")
 	botMode := flag.Bool("bot", false, "Run as a bot")
+	password := flag.String("password", "", "password for existing users")
 	flag.Parse()
 
 	if moniker == nil || *moniker == "" {
@@ -185,10 +248,16 @@ func main() {
 		return
 	}
 
+	if password == nil || *password == "" {
+		log.Println("password is required")
+		return
+	}
+
 	client := &Client{
 		conn:      nil,
 		sendMsgCh: make(chan []byte, 1024),
 		moniker:   *moniker,
+		password:  *password,
 	}
 
 	if *botMode {
