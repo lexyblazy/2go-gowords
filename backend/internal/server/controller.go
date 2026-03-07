@@ -25,6 +25,14 @@ func normalizeUserName(username string) string {
 	return strings.ToLower(strings.TrimSpace(username))
 }
 
+func getCookie(r *http.Request, name string) string {
+	cookie, err := r.Cookie(name)
+	if err != nil {
+		return ""
+	}
+	return cookie.Value
+}
+
 func (s *Server) createSession(r *http.Request, w http.ResponseWriter, user store.UserEntity) error {
 	sessionToken, err := helpers.NewUUIDV4()
 
@@ -174,13 +182,7 @@ func (s *Server) logout(r *http.Request, w http.ResponseWriter) (any, int, error
 
 	}
 
-	cookie, err := r.Cookie("session")
-
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.New("something went wrong")
-	}
-
-	sessionToken := cookie.Value
+	sessionToken := getCookie(r, "session")
 
 	if sessionToken == "" {
 		return nil, http.StatusUnauthorized, errors.New("no session found")
