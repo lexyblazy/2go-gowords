@@ -13,7 +13,7 @@ import (
 func main() {
 	c := config.New("config.json")
 	redisUrl := os.Getenv("REDIS_URL")
-	
+
 	if redisUrl == "" {
 		redisUrl = c.Redis.URL
 	}
@@ -32,7 +32,7 @@ func main() {
 		log.Fatal("Db err", err)
 	}
 
-	l := lobby.New(c)
+	l := lobby.New(c, db)
 	l.Init()
 
 	s := server.New(db, rs, c.Server.Port, l)

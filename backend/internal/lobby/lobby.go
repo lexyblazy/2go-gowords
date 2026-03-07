@@ -14,6 +14,7 @@ import (
 	"github.com/lexyblazy/gowords/internal/dictionary"
 	"github.com/lexyblazy/gowords/internal/events"
 	"github.com/lexyblazy/gowords/internal/helpers"
+	"github.com/lexyblazy/gowords/internal/store"
 )
 
 type Lobby struct {
@@ -23,9 +24,11 @@ type Lobby struct {
 	mu    *sync.RWMutex
 
 	monikers map[string]string
+
+	db *store.SqlDb
 }
 
-func New(c *config.Config) *Lobby {
+func New(c *config.Config, db *store.SqlDb) *Lobby {
 	d := dictionary.NewDictionary(c.Dictionary.FileName)
 
 	return &Lobby{
@@ -34,6 +37,7 @@ func New(c *config.Config) *Lobby {
 		d:        d,
 		mu:       &sync.RWMutex{},
 		monikers: make(map[string]string),
+		db:       db,
 	}
 }
 
@@ -57,7 +61,13 @@ func (l *Lobby) allocateRooms() {
 	}
 }
 
-func (l *Lobby) validateMoniker(moniker string) (bool, string) {
+func (l *Lobby) validateMoniker(player *Player, moniker string) (bool, string) {
+
+	// this is an existing user in our system - skip validation
+	if player.id != "" && player.moniker != "" {
+		l.monikers[strings.ToLower(player.moniker)] = player.id
+		return true, ""
+	}
 
 	moniker = strings.TrimSpace(moniker)
 	length := utf8.RuneCountInString(moniker)
@@ -84,6 +94,13 @@ func (l *Lobby) validateMoniker(moniker string) (bool, string) {
 	}
 
 	if _, ok := l.monikers[strings.ToLower(moniker)]; ok {
+		return false, inUseMessage
+	}
+
+	// check if moniker belongs to any of the existing users
+	user, _ := l.db.GetUserByUsername(moniker)
+
+	if user.ID != "" && user.Moniker != "" {
 		return false, inUseMessage
 	}
 
@@ -134,7 +151,7 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	ok, errorMessage := l.validateMoniker(joinPayload.Payload.PlayerName)
+	ok, errorMessage := l.validateMoniker(player, joinPayload.Payload.PlayerName)
 
 	if !ok {
 
