@@ -2,6 +2,8 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -21,10 +23,12 @@ func NewSqlDB(dsn string) (*SqlDb, error) {
 	}, nil
 }
 
-func (s *SqlDb) GetUserByUsername(username string) (UserEntity, error) {
-
+func (s *SqlDb) getUserByColumn(colName string, value string) (UserEntity, error) {
 	var user UserEntity
-	err := s.db.QueryRow("select id, username, moniker, password, created_at, recovery_hash from users where username = ?", username).Scan(
+
+	query := fmt.Sprintf("select id, username, moniker, password, created_at, recovery_hash from users where %s = ?", colName)
+
+	err := s.db.QueryRow(query, value).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Moniker,
@@ -37,7 +41,15 @@ func (s *SqlDb) GetUserByUsername(username string) (UserEntity, error) {
 	}
 
 	return user, nil
+}
 
+func (s *SqlDb) GetUserById(id string) (UserEntity, error) {
+	return s.getUserByColumn("id", id)
+
+}
+
+func (s *SqlDb) GetUserByUsername(username string) (UserEntity, error) {
+	return s.getUserByColumn("username", username)
 }
 
 func (s *SqlDb) CreateUser(id string, username string, passwordHash string, moniker string, recoveryHash string) (UserEntity, error) {

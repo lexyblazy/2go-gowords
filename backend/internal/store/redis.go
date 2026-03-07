@@ -38,3 +38,18 @@ func (rs *RedisStore) Set(ctx context.Context, key string, value interface{}, tt
 func (rs *RedisStore) Delete(ctx context.Context, key string) error {
 	return rs.conn.Del(ctx, key).Err()
 }
+
+func (rs *RedisStore) Get(ctx context.Context, key string) (string, error) {
+	val, err := rs.conn.Get(ctx, key).Result()
+
+	if err != nil {
+		return "", err
+	}
+
+	if err == redis.Nil {
+		return "", nil
+	}
+
+	return val, nil
+
+}
