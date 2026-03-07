@@ -275,10 +275,17 @@ func (s *Server) getLeaderboards(r *http.Request, w http.ResponseWriter) (any, i
 		return nil, http.StatusInternalServerError, errors.New("failed to get weekly leaderboard")
 	}
 
+	allTimeHighScores, err := s.rs.GetAllTimeHighScores(r.Context())
+
+	if err != nil {
+		return nil, http.StatusInternalServerError, errors.New("failed to get weekly leaderboard")
+	}
+
 	res := make(map[string]any)
 
 	res["daily"] = daily
 	res["weekly"] = weekly
+	res["highScores"] = allTimeHighScores
 
 	return res, http.StatusOK, nil
 }

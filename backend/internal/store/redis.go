@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	LEADERBOARD_DAILY  = "leaderboard:daily"
-	LEADERBOARD_WEEKLY = "leaderboard:weekly"
+	LEADERBOARD_DAILY                = "leaderboard:daily"
+	LEADERBOARD_WEEKLY               = "leaderboard:weekly"
+	LEADERBOARD_ALL_TIME_HIGH_SCORES = "leaderboard:all_time_high_scores"
 
 	USERS_MONIKERS = "users_monikers"
 )
@@ -78,18 +79,9 @@ func (rs *RedisStore) UpdateLeaderBoards(ctx context.Context, scoresMap map[stri
 
 	for userId, score := range scoresMap {
 
-		pipe.ZAddArgs(ctx, LEADERBOARD_DAILY, redis.ZAddArgs{
-			GT: true,
-			Members: []redis.Z{
-				{
-
-					Score:  float64(score),
-					Member: userId,
-				},
-			},
-		})
-
-		pipe.ZAddArgs(ctx, LEADERBOARD_WEEKLY, redis.ZAddArgs{
+		pipe.ZIncrBy(ctx, LEADERBOARD_DAILY, float64(score), userId)
+		pipe.ZIncrBy(ctx, LEADERBOARD_WEEKLY, float64(score), userId)
+		pipe.ZAddArgs(ctx, LEADERBOARD_ALL_TIME_HIGH_SCORES, redis.ZAddArgs{
 			GT: true,
 			Members: []redis.Z{
 				{
@@ -151,35 +143,39 @@ func (rs *RedisStore) aggregateLeaderBoardFromSet(ctx context.Context, set []red
 
 }
 
-func (rs *RedisStore) GetDailyLeaderBoard(ctx context.Context) (any, error) {
+func (rs *RedisStore) GetDailyLeaderBoard(ctx context.Context) ([]*LeaderboardEntry, error) {
 
-	daily, err := rs.getDailyTop(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return rs.aggregateLeaderBoardFromSet(ctx, daily)
-
-}
-
-func (rs *RedisStore) GetWeeklyLeaderboard(ctx context.Context) (any, error) {
-	weekly, err := rs.getWeeklyTop(ctx)
+	set, err := rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_DAILY, 0, 9).Result()
 
 	if err != nil {
 		return nil, err
 	}
 
-	return rs.aggregateLeaderBoardFromSet(ctx, weekly)
+	return rs.aggregateLeaderBoardFromSet(ctx, set)
 
 }
 
-func (rs *RedisStore) getDailyTop(ctx context.Context) ([]redis.Z, error) {
-	return rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_DAILY, 0, 9).Result()
+func (rs *RedisStore) GetWeeklyLeaderboard(ctx context.Context) ([]*LeaderboardEntry, error) {
+	set, err := rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_WEEKLY, 0, 9).Result()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.aggregateLeaderBoardFromSet(ctx, set)
+
 }
 
-func (rs *RedisStore) getWeeklyTop(ctx context.Context) ([]redis.Z, error) {
-	return rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_WEEKLY, 0, 9).Result()
+func (rs *RedisStore) GetAllTimeHighScores(ctx context.Context) ([]*LeaderboardEntry, error) {
+
+	set, err := rs.conn.ZRevRangeWithScores(ctx, LEADERBOARD_ALL_TIME_HIGH_SCORES, 0, 9).Result()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return rs.aggregateLeaderBoardFromSet(ctx, set)
+
 }
 
 func (rs *RedisStore) getUserMonikers(ctx context.Context, ids ...string) ([]any, error) {
