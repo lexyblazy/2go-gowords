@@ -4,6 +4,7 @@ CREATE TABLE users (
     username VARCHAR(255) UNIQUE NOT NULL,
     moniker VARCHAR(255) DEFAULT "username", -- for fancy customization purposes. 
     password VARCHAR(255) NOT NULL,
+    recovery_hash TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 

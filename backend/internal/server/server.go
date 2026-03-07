@@ -43,6 +43,8 @@ func (s *Server) loadRoutes(router *http.ServeMux) {
 
 	router.HandleFunc("/logout", s.jsonHandler(s.logout))
 
+	router.HandleFunc("/reset-password", s.jsonHandler(s.resetPassword))
+
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
