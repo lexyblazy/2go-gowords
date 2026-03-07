@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -43,13 +44,17 @@ func (s *SqlDb) getUserByColumn(colName string, value string) (UserEntity, error
 	return user, nil
 }
 
+func normalizeUsername(username string) string {
+	return strings.ToLower(strings.TrimSpace(username))
+}
+
 func (s *SqlDb) GetUserById(id string) (UserEntity, error) {
 	return s.getUserByColumn("id", id)
 
 }
 
 func (s *SqlDb) GetUserByUsername(username string) (UserEntity, error) {
-	return s.getUserByColumn("username", username)
+	return s.getUserByColumn("username", normalizeUsername(username))
 }
 
 func (s *SqlDb) CreateUser(id string, username string, passwordHash string, moniker string, recoveryHash string) (UserEntity, error) {
@@ -57,7 +62,7 @@ func (s *SqlDb) CreateUser(id string, username string, passwordHash string, moni
 	var user UserEntity
 
 	err := s.db.QueryRow(`insert into users(id, username, password, moniker, recovery_hash) 
-	values (?, ?, ?, ?, ?) returning id, username, moniker `, id, username, passwordHash, moniker, recoveryHash).Scan(
+	values (?, ?, ?, ?, ?) returning id, username, moniker `, id, normalizeUsername(username), passwordHash, moniker, recoveryHash).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Moniker,

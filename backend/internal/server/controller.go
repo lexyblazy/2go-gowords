@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,10 +18,6 @@ type body struct {
 	Username     string `json:"username"`
 	Password     string `json:"password"`
 	RecoveryCode string `json:"recoveryCode"`
-}
-
-func normalizeUserName(username string) string {
-	return strings.ToLower(strings.TrimSpace(username))
 }
 
 func getCookie(r *http.Request, name string) string {
@@ -74,7 +69,7 @@ func (s *Server) login(r *http.Request, w http.ResponseWriter) (any, int, error)
 		return nil, http.StatusInternalServerError, err
 	}
 
-	user, err := s.db.GetUserByUsername(normalizeUserName(reqBody.Username))
+	user, err := s.db.GetUserByUsername(reqBody.Username)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, http.StatusUnauthorized, errors.New("account not found")
@@ -128,7 +123,7 @@ func (s *Server) register(r *http.Request, w http.ResponseWriter) (any, int, err
 		return nil, http.StatusUnprocessableEntity, errors.New("password must be at least 6 characters long")
 	}
 
-	user, err := s.db.GetUserByUsername(normalizeUserName(reqBody.Username))
+	user, err := s.db.GetUserByUsername(reqBody.Username)
 
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, http.StatusInternalServerError, err
@@ -154,7 +149,7 @@ func (s *Server) register(r *http.Request, w http.ResponseWriter) (any, int, err
 	code, _ := helpers.GenerateRecoveryCode()
 	rcHash := helpers.HashRecoveryCode(code)
 
-	newUser, err := s.db.CreateUser(id, normalizeUserName(reqBody.Username), string(passHash), reqBody.Username, rcHash)
+	newUser, err := s.db.CreateUser(id, reqBody.Username, string(passHash), reqBody.Username, rcHash)
 
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -214,7 +209,7 @@ func (s *Server) resetPassword(r *http.Request, w http.ResponseWriter) (any, int
 		return nil, http.StatusInternalServerError, err
 	}
 
-	user, err := s.db.GetUserByUsername(normalizeUserName(reqBody.Username))
+	user, err := s.db.GetUserByUsername(reqBody.Username)
 
 	if err != nil || errors.Is(err, sql.ErrNoRows) {
 		return nil, http.StatusUnauthorized, errors.New("account not found")
