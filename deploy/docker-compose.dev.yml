@@ -5,6 +5,10 @@ services:
     container_name: gowords-backend-dev
     ports:
       - "8081:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
 
   frontend:
     build:
@@ -14,3 +18,14 @@ services:
     container_name: gowords-frontend-dev
     ports:
       - "5173:3000"
+
+  redis:
+    container_name: redis
+    image: redis:7
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_volume:/data
+
+volumes:
+  redis_volume:

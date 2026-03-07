@@ -6,6 +6,10 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8081:8080"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379
 
   frontend:
     build:
@@ -14,3 +18,14 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:5173:3000"
+    depends_on:
+      - backend
+
+  redis:
+    container_name: redis
+    image: redis:7
+    volumes:
+      - redis_volume:/data
+
+volumes:
+  redis_volume:
