@@ -91,6 +91,9 @@ func (s *Server) login(r *http.Request, w http.ResponseWriter) (any, int, error)
 		return nil, http.StatusInternalServerError, errors.New("failed to create session")
 	}
 
+	// cache user moniker
+	s.rs.CacheUserMoniker(r.Context(), user.ID, user.Moniker)
+
 	var res map[string]string = make(map[string]string)
 
 	res["id"] = user.ID
@@ -160,6 +163,9 @@ func (s *Server) register(r *http.Request, w http.ResponseWriter) (any, int, err
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
+
+	// cache user moniker
+	s.rs.CacheUserMoniker(r.Context(), newUser.ID, newUser.Moniker)
 
 	var res map[string]string = make(map[string]string)
 

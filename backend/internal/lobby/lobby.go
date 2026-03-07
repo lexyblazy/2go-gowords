@@ -1,6 +1,7 @@
 package lobby
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,7 +40,7 @@ func New(c *config.Config, db *store.SqlDb, rs *store.RedisStore) *Lobby {
 		mu:       &sync.RWMutex{},
 		monikers: make(map[string]string),
 		db:       db,
-		rs: rs,
+		rs:       rs,
 	}
 }
 
@@ -179,7 +180,7 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 	joinRoomOKEvent.Payload.Timestamp = time.Now().UnixMilli()
 	joinRoomOKEvent.Payload.RoomId = 0
 
-	// update player structs
+	// update player structs. This is redundant for existing users
 	player.moniker = basePlayer.moniker
 	player.id = basePlayer.id
 
@@ -194,6 +195,9 @@ func (l *Lobby) JoinRoom(player *Player, message []byte) ([]byte, error) {
 			break
 		}
 	}
+
+	// cache moniker for both guests and existing players
+	l.rs.CacheUserMoniker(context.Background(), player.id, player.moniker)
 
 	return toBytes(joinRoomOKEvent)
 }

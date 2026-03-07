@@ -11,6 +11,8 @@ import (
 const (
 	LEADERBOARD_DAILY  = "leaderboard:daily"
 	LEADERBOARD_WEEKLY = "leaderboard:weekly"
+
+	USERS_MONIKERS = "users_monikers"
 )
 
 type RedisStore struct {
@@ -38,6 +40,10 @@ func NewRedisStore(url string) (*RedisStore, error) {
 
 func (rs *RedisStore) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
 	return rs.conn.Set(ctx, key, value, ttl).Err()
+}
+
+func (rs *RedisStore) CacheUserMoniker(ctx context.Context, userId string, moniker string) error {
+	return rs.conn.HSet(ctx, USERS_MONIKERS, userId, moniker).Err()
 }
 
 func (rs *RedisStore) Delete(ctx context.Context, key string) error {
