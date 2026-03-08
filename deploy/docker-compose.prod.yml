@@ -10,6 +10,9 @@ services:
       - redis
     environment:
       - REDIS_URL=redis://redis:6379
+      - DB_DSN=/data/gowords.db
+    volumes:
+      - ../backend/data:/data
 
   frontend:
     build:
