@@ -199,3 +199,7 @@ func (rs *RedisStore) GetAllTimeHighScores(ctx context.Context) ([]*LeaderboardE
 func (rs *RedisStore) getUserMonikers(ctx context.Context, ids ...string) ([]any, error) {
 	return rs.conn.HMGet(ctx, USERS_MONIKERS, ids...).Result()
 }
+
+func (rs *RedisStore) Close() {
+	rs.conn.Close()
+}

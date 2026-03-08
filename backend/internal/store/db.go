@@ -19,6 +19,27 @@ func NewSqlDB(dsn string) (*SqlDb, error) {
 		return nil, err
 	}
 
+	db.SetMaxOpenConns(1)
+
+	var mode string
+	err = db.QueryRow(`PRAGMA journal_mode=WAL;`).Scan(&mode)
+	if err != nil {
+		return nil, err
+	}
+
+	if mode != "wal" {
+		return nil, fmt.Errorf("failed to enable WAL mode, got %s", mode)
+	}
+
+	_, err = db.Exec(`
+		PRAGMA synchronous=NORMAL;
+		PRAGMA busy_timeout=5000;
+	`)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &SqlDb{
 		db: db,
 	}, nil
@@ -83,4 +104,8 @@ func (s *SqlDb) UpdatePassword(userId string, passwordHash string) error {
 	}
 
 	return nil
+}
+
+func (s *SqlDb) Close() {
+	s.db.Close()
 }

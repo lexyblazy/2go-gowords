@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/lexyblazy/gowords/internal/config"
 	"github.com/lexyblazy/gowords/internal/lobby"
@@ -10,8 +12,7 @@ import (
 	"github.com/lexyblazy/gowords/internal/store"
 )
 
-func main() {
-	c := config.New("config.json")
+func mustRedis(c *config.Config) *store.RedisStore {
 	redisUrl := os.Getenv("REDIS_URL")
 
 	if redisUrl == "" {
@@ -21,21 +22,50 @@ func main() {
 	if err != nil {
 		log.Fatal("Redis err", err)
 	}
+
+	return rs
+}
+
+func mustDb(c *config.Config) *store.SqlDb {
 	dbDsn := os.Getenv("DB_DSN")
 
 	if dbDsn == "" {
 		dbDsn = c.Db.DSN
 	}
+
 	db, err := store.NewSqlDB(dbDsn)
 
 	if err != nil {
 		log.Fatal("Db err", err)
 	}
 
+	return db
+
+}
+
+func main() {
+	c := config.New("config.json")
+	rs := mustRedis(c)
+	db := mustDb(c)
+
 	l := lobby.New(c, db, rs)
 	l.Init()
 
 	s := server.New(db, rs, c.Server.Port, l)
-	s.Start()
+	go s.Start()
 
+	waitForShutdown(db, rs)
+
+}
+
+func waitForShutdown(db *store.SqlDb, rs *store.RedisStore) {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	<-sig
+
+	db.Close()
+	rs.Close()
+
+	os.Exit(0)
 }
