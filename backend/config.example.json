@@ -23,7 +23,7 @@
     "fileName": "dictionary.txt"
   },
   "db": {
-    "dsn": "gowords.db"
+    "dsn": "./data/gowords.db"
   },
   "redis": {
     "url": "redis://localhost:6380"
