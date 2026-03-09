@@ -106,6 +106,55 @@ func (s *SqlDb) UpdatePassword(userId string, passwordHash string) error {
 	return nil
 }
 
+func (s *SqlDb) UpdateUserStats(updates []UserStatsUpdate) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+	INSERT INTO user_stats (
+		user_id,
+		wins_count,
+		best_score,
+		games_played,
+		total_score,
+		created_at,
+		updated_at
+	) VALUES (?1, ?2, ?3, 1, ?3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	ON CONFLICT(user_id) DO UPDATE SET
+		games_played = user_stats.games_played + 1,
+		wins_count = user_stats.wins_count + excluded.wins_count,
+		best_score = MAX(user_stats.best_score, excluded.best_score),
+		total_score = user_stats.total_score + excluded.total_score,
+		updated_at = CURRENT_TIMESTAMP;
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, u := range updates {
+		winIncrement := 0
+		if u.IsWinner {
+			winIncrement = 1
+		}
+		if _, err := stmt.Exec(
+			u.UserID,
+			winIncrement,
+			u.Score,
+		); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func (s *SqlDb) Close() {
 	s.db.Close()
 }
