@@ -37,15 +37,15 @@ var upgrader = websocket.Upgrader{
 
 func (s *Server) loadRoutes(router *http.ServeMux) {
 
-	router.HandleFunc("/api/login", s.jsonHandler(s.login))
+	router.HandleFunc("/login", s.jsonHandler(s.login))
 
-	router.HandleFunc("/api/register", s.jsonHandler(s.register))
+	router.HandleFunc("/register", s.jsonHandler(s.register))
 
-	router.HandleFunc("/api/logout", s.jsonHandler(s.logout))
+	router.HandleFunc("/logout", s.jsonHandler(s.logout))
 
-	router.HandleFunc("/api/reset-password", s.jsonHandler(s.resetPassword))
+	router.HandleFunc("/reset-password", s.jsonHandler(s.resetPassword))
 
-	router.HandleFunc("/api/leaderboards", s.jsonHandler(s.getLeaderboards))
+	router.HandleFunc("/leaderboards", s.jsonHandler(s.getLeaderboards))
 
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
