@@ -23,7 +23,7 @@ services:
       - "5173:3000"
 
   redis:
-    container_name: redis
+    container_name: gowords-redis
     image: redis:7
     ports:
       - "6380:6379"
