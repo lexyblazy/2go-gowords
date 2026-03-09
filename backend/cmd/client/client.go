@@ -100,11 +100,14 @@ func (c *Client) Run() error {
 		if err := c.ReceiveMessages(); err != nil {
 
 			log.Println("ReceiveMessagesErr:", err)
-			if err = c.Reconnect(); err != nil {
-				log.Println("ReconnectErr:", err)
-			}
 			time.Sleep(min(retryDelay, maxDelay))
 			retryDelay *= 2
+
+			if err = c.Reconnect(); err != nil {
+				log.Println("ReconnectErr:", err)
+			} else {
+				retryDelay = 1 * time.Second
+			}
 			continue
 		}
 	}
