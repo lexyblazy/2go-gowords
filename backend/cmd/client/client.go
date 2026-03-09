@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -29,9 +28,10 @@ type Client struct {
 	playerId  string
 	password  string
 	bot       *bot.Bot
+	headers   http.Header
 }
 
-func (c *Client) login() (http.Header, error) {
+func (c *Client) login() error {
 	var params map[string]string = make(map[string]string)
 	params["username"] = c.moniker
 	params["password"] = c.password
@@ -45,7 +45,7 @@ func (c *Client) login() (http.Header, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	client := &http.Client{
@@ -54,13 +54,13 @@ func (c *Client) login() (http.Header, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		io.Copy(os.Stdout, res.Body)
-		return nil, errors.New("Failed to login")
+		return errors.New("Failed to login")
 	}
 
 	cookieHeader := ""
@@ -70,48 +70,26 @@ func (c *Client) login() (http.Header, error) {
 	header := http.Header{}
 	header.Set("Cookie", cookieHeader)
 
-	return header, nil
+	c.headers = header
+
+	return nil
 
 }
 
 func (c *Client) Run() error {
 
-	var headers http.Header = nil
-
 	// attempt a login
 	log.Println("Logging in..")
-	h, err := c.login()
+	err := c.login()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	headers = h
+	err = c.ConnectAndJoinRoom()
 
-	if c.conn == nil {
-
-		log.Println("Connecting...")
-		conn, err := createConnection(headers)
-
-		if err != nil {
-			log.Println("Error creating connection:", err)
-			return err
-		}
-
-		c.conn = conn
-
-		var joinRoomRequestEvent events.JoinRoomRequest
-		joinRoomRequestEvent.Type = events.EventTypeJoinRoomRequest
-		joinRoomRequestEvent.Payload.PlayerName = c.moniker
-
-		joinMessage, err := json.Marshal(joinRoomRequestEvent)
-
-		if err != nil {
-			log.Println("Error marshalling join message payload:", err)
-			return err
-		}
-
-		c.sendMsgCh <- joinMessage
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	retryDelay := 1 * time.Second
@@ -121,6 +99,10 @@ func (c *Client) Run() error {
 
 		if err := c.ReceiveMessages(); err != nil {
 
+			log.Println("ReceiveMessagesErr:", err)
+			if err = c.Reconnect(); err != nil {
+				log.Println("ReconnectErr:", err)
+			}
 			time.Sleep(min(retryDelay, maxDelay))
 			retryDelay *= 2
 			continue
@@ -158,6 +140,37 @@ func (c *Client) handleMessage(message []byte) error {
 
 }
 
+func (c *Client) ConnectAndJoinRoom() error {
+	conn, err := createConnection(c.headers)
+
+	if err != nil {
+		log.Println("Error creating connection:", err)
+		return err
+	}
+
+	c.conn = conn
+
+	var joinRoomRequestEvent events.JoinRoomRequest
+	joinRoomRequestEvent.Type = events.EventTypeJoinRoomRequest
+	joinRoomRequestEvent.Payload.PlayerName = c.moniker
+
+	joinMessage, err := json.Marshal(joinRoomRequestEvent)
+
+	if err != nil {
+		log.Println("Error marshalling join message payload:", err)
+		return err
+	}
+
+	c.sendMsgCh <- joinMessage
+
+	return nil
+}
+
+func (c *Client) Reconnect() error {
+	log.Println("Reconnecting...")
+	return c.ConnectAndJoinRoom()
+}
+
 func (c *Client) ReceiveMessages() error {
 
 	for {
@@ -167,11 +180,7 @@ func (c *Client) ReceiveMessages() error {
 		if err != nil {
 			log.Println("ReadMessages:", err)
 
-			if strings.Contains(err.Error(), "connection reset") {
-				log.Println("Connection reset: Handle reconnection")
-			} else {
-				c.Close()
-			}
+			c.Close()
 
 			return err
 
@@ -224,11 +233,6 @@ func (c *Client) readInput() {
 		err := scanner.Err()
 		if err != nil {
 			log.Println("Error reading input:", err)
-			continue
-		}
-
-		if err != nil {
-			log.Println("Error marshalling player word submission message payload:", err)
 			continue
 		}
 

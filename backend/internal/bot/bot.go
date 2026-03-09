@@ -123,6 +123,10 @@ func (b *Bot) submitSolutions() {
 		default:
 		}
 
+		if b.cr == nil {
+			return
+		}
+
 		if _, ok := b.cr.UsedWords[word]; ok {
 			continue
 		}
