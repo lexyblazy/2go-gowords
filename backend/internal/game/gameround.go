@@ -20,7 +20,7 @@ type GameRound struct {
 	emitEvent      func(event events.EnrichableEvent)
 	endsAt         int64
 
-	updateLeaderBoards func(scores map[string]int)
+	updateStats func(scores map[string]int, winnerPlayerId string)
 }
 
 func (gr *GameRound) makeWordRejectedEvent(message string, playerId string, word string) {
@@ -124,8 +124,8 @@ func (gr *GameRound) ReportScores() {
 		gr.emitEvent(&event)
 	}
 
-	// update leaderboards
-	gr.updateLeaderBoards(gr.scores)
+	// update stats
+	gr.updateStats(gr.scores, winnerPlayerId)
 
 
 }

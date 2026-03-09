@@ -55,7 +55,7 @@ func (l *Lobby) allocateRooms() {
 		if len(l.rooms) < l.c.Lobby.RoomCount {
 			l.mu.Lock()
 			roomId := len(l.rooms) + 1
-			room := NewRoom(l.c, roomId, l.d, l.removeMoniker, l.rs)
+			room := NewRoom(l.c, roomId, l.d, l.removeMoniker, l.rs, l.db)
 			l.rooms[roomId] = room
 			go room.Run()
 			l.mu.Unlock()

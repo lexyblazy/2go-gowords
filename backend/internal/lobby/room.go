@@ -28,6 +28,7 @@ type Room struct {
 	removeFromLobbyFunc func(moniker string)
 
 	rs *store.RedisStore
+	db *store.SqlDb
 }
 
 type OutgoingMessage struct {
@@ -40,7 +41,7 @@ type OutgoingMessage struct {
 	} `json:"payload"`
 }
 
-func NewRoom(c *config.Config, id int, d *dictionary.Dictionary, removeFromLobbyFunc func(moniker string), rs *store.RedisStore) *Room {
+func NewRoom(c *config.Config, id int, d *dictionary.Dictionary, removeFromLobbyFunc func(moniker string), rs *store.RedisStore, db *store.SqlDb) *Room {
 
 	return &Room{
 		id:                  id,
@@ -51,6 +52,7 @@ func NewRoom(c *config.Config, id int, d *dictionary.Dictionary, removeFromLobby
 		unregisterChan:      make(chan *Player),
 		removeFromLobbyFunc: removeFromLobbyFunc,
 		rs:                  rs,
+		db:                  db,
 	}
 }
 
@@ -132,7 +134,7 @@ func (r *Room) Broadcast(event events.EnrichableEvent) {
 func (r *Room) Run() {
 
 	go r.PrintPlayers()
-	r.gs = game.NewGameState(r.c, r.d, r.Broadcast, r.rs)
+	r.gs = game.NewGameState(r.c, r.d, r.rs, r.db, r.Broadcast)
 
 	go func() {
 		for {

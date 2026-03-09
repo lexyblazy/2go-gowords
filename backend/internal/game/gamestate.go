@@ -2,6 +2,7 @@ package game
 
 import (
 	"context"
+	"log"
 	"math/rand"
 	"strings"
 	"time"
@@ -21,12 +22,15 @@ type GameState struct {
 	emitEvent    func(event events.EnrichableEvent)
 
 	rs *store.RedisStore
+	db *store.SqlDb
 }
 
 func NewGameState(
-	c *config.Config, d *dictionary.Dictionary,
-	emitEvent func(event events.EnrichableEvent),
+	c *config.Config,
+	d *dictionary.Dictionary,
 	rs *store.RedisStore,
+	db *store.SqlDb,
+	emitEvent func(event events.EnrichableEvent),
 ) *GameState {
 	rng := rand.New(rand.NewSource(NewSeed()))
 	box := NewGamebox(d, rng)
@@ -39,6 +43,7 @@ func NewGameState(
 		emitEvent:    emitEvent,
 		c:            c,
 		rs:           rs,
+		db:           db,
 	}
 }
 
@@ -57,7 +62,7 @@ func (gs *GameState) NewRound() *GameRound {
 		submissionChan:          make(chan *events.PlayerWordSubmissionEvent),
 		scores:                  make(map[string]int),
 		emitEvent:               gs.emitEvent,
-		updateLeaderBoards:      gs.updateLeaderBoards,
+		updateStats:             gs.updateStats,
 	}
 }
 
@@ -192,8 +197,24 @@ func (gs *GameState) BroadcastRules() {
 
 }
 
-func (gs *GameState) updateLeaderBoards(scoresMap map[string]int) {
+func (gs *GameState) updateStats(scoresMap map[string]int, winnerPlayerId string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	// update leaderboards
 	gs.rs.UpdateLeaderBoards(ctx, scoresMap)
+
+	updates := []store.UserStatsUpdate{}
+	for playerId, score := range scoresMap {
+		updates = append(updates, store.UserStatsUpdate{
+			UserID:   playerId,
+			IsWinner: playerId == winnerPlayerId,
+			Score:    score,
+		})
+	}
+
+	// update stats
+	err := gs.db.UpdateUserStats(updates)
+	if err != nil {
+		log.Println("failed to update user stats", err)
+	}
 }
