@@ -50,4 +50,3 @@ func (b *Gamebox) GetValidWordCombinations(words ...dictionary.Word) map[string]
 func (b *Gamebox) GetDistinctCharacterCount(words ...dictionary.Word) int {
 	return b.d.CountDistinctCharacters(words...)
 }
-

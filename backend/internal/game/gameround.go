@@ -127,7 +127,6 @@ func (gr *GameRound) ReportScores() {
 	// update stats
 	gr.updateStats(gr.scores, winnerPlayerId)
 
-
 }
 
 func (gr *GameRound) ExpandWords() {

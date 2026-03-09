@@ -164,7 +164,7 @@ func (e *RoundOverEvent) Enrich(params EnrichmentParams) {
 type RoundWinnerEvent struct {
 	Type    EventType `json:"type"`
 	Payload struct {
-		WinnerPlayerId  string `json:"winnerPlayerId"`
+		WinnerPlayerId   string `json:"winnerPlayerId"`
 		WinnerPlayerName string `json:"winnerPlayerName"`
 		Score            int    `json:"score"`
 		Timestamp        int64  `json:"timestamp"`
