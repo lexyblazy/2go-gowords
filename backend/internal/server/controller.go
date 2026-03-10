@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -37,7 +36,7 @@ func (s *Server) createSession(r *http.Request, w http.ResponseWriter, user stor
 	}
 
 	sessionAge := 24 * time.Hour
-	err = s.rs.Set(r.Context(), fmt.Sprintf("sessions:%s", sessionToken), user.ID, sessionAge)
+	err = s.rs.CreateSession(r.Context(), sessionToken, user.ID, sessionAge)
 
 	if err != nil {
 		return err
@@ -197,7 +196,7 @@ func (s *Server) logout(r *http.Request, w http.ResponseWriter) (any, int, error
 		MaxAge: -1,
 	})
 
-	s.rs.Delete(r.Context(), fmt.Sprintf("sessions:%s", sessionToken))
+	s.rs.DeleteSession(r.Context(), sessionToken)
 
 	return "OK", http.StatusOK, nil
 }
@@ -296,4 +295,20 @@ func (s *Server) getLeaderboards(r *http.Request, w http.ResponseWriter) (any, i
 	res["highScores"] = allTimeHighScores
 
 	return res, http.StatusOK, nil
+}
+
+func (s *Server) getUserStats(r *http.Request, w http.ResponseWriter) (any, int, error) {
+	if r.Method != http.MethodGet {
+		return nil, http.StatusNotFound, errors.New("not found")
+	}
+
+	userId := r.Context().Value("userId").(string)
+
+	userStats, err := s.db.GetUserStats(userId)
+
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	return userStats, http.StatusOK, nil
 }

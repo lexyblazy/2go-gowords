@@ -1,11 +1,13 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 
 	"github.com/lexyblazy/gowords/internal/lobby"
 	"github.com/lexyblazy/gowords/internal/store"
@@ -47,6 +49,13 @@ func (s *Server) loadRoutes(router *http.ServeMux) {
 
 	router.HandleFunc("/leaderboards", s.jsonHandler(s.getLeaderboards))
 
+	router.HandleFunc("/user-stats", s.checkIsAuthenticated(s.jsonHandler(s.getUserStats)))
+
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -60,7 +69,7 @@ func (s *Server) loadRoutes(router *http.ServeMux) {
 		)
 
 		token := getCookie(r, "session")
-		userId, err := s.rs.Get(r.Context(), fmt.Sprintf("sessions:%s", token))
+		userId, err := s.rs.GetSession(r.Context(), token)
 
 		if len(userId) > 0 {
 			user, err := s.db.GetUserById(userId)
@@ -102,6 +111,28 @@ func (s *Server) jsonHandler(fn func(r *http.Request, w http.ResponseWriter) (an
 		}
 	}
 
+}
+
+func (s *Server) checkIsAuthenticated(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		sessionToken := getCookie(r, "session")
+
+		if sessionToken == "" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		userID, err := s.rs.GetSession(r.Context(), sessionToken)
+		if err != nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "userId", userID)
+
+		next(w, r.WithContext(ctx))
+	})
 }
 
 func (s *Server) Start() {
