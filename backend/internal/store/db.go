@@ -119,20 +119,30 @@ func (s *SqlDb) UpdateUserStats(updates []UserStatsUpdate) error {
 
 	stmt, err := tx.Prepare(`
 	INSERT INTO user_stats (
-		user_id,
-		wins_count,
-		best_score,
-		games_played,
-		total_score,
-		created_at,
-		updated_at
-	) VALUES (?1, ?2, ?3, 1, ?3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	  user_id,
+	  wins_count,
+	  best_score,
+	  games_played,
+	  total_score,
+	  created_at,
+	  updated_at
+	)
+	SELECT
+	  u.id,
+	  ?2,
+	  ?3,
+	  1,
+	  ?3,
+	  CURRENT_TIMESTAMP,
+	  CURRENT_TIMESTAMP
+	FROM users u
+	WHERE u.id = ?1
 	ON CONFLICT(user_id) DO UPDATE SET
-		games_played = user_stats.games_played + 1,
-		wins_count = user_stats.wins_count + excluded.wins_count,
-		best_score = MAX(user_stats.best_score, excluded.best_score),
-		total_score = user_stats.total_score + excluded.total_score,
-		updated_at = CURRENT_TIMESTAMP;
+	  games_played = user_stats.games_played + 1,
+	  wins_count = user_stats.wins_count + excluded.wins_count,
+	  best_score = MAX(user_stats.best_score, excluded.best_score),
+	  total_score = user_stats.total_score + excluded.total_score,
+	  updated_at = CURRENT_TIMESTAMP
 	`)
 	if err != nil {
 		return err
