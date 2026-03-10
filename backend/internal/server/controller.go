@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -263,22 +264,29 @@ func (s *Server) getLeaderboards(r *http.Request, w http.ResponseWriter) (any, i
 		return nil, http.StatusNotFound, errors.New("not found")
 	}
 
-	daily, err := s.rs.GetDailyLeaderBoard(r.Context())
+	var wg sync.WaitGroup
+	var daily, weekly, allTimeHighScores []*store.LeaderboardEntry
+	var err error
+	wg.Add(3)
 
+	go func() {
+		defer wg.Done()
+		daily, err = s.rs.GetDailyLeaderBoard(r.Context())
+	}()
+	go func() {
+		defer wg.Done()
+		weekly, err = s.rs.GetWeeklyLeaderboard(r.Context())
+	}()
+	go func() {
+		defer wg.Done()
+		allTimeHighScores, err = s.rs.GetAllTimeHighScores(r.Context())
+	}()
+
+	wg.Wait()
+
+	// this is an all or nothing approach, so if any of the requests fail, we return an error
 	if err != nil {
-		return nil, http.StatusInternalServerError, errors.New("failed to get daily leaderboard")
-	}
-
-	weekly, err := s.rs.GetWeeklyLeaderboard(r.Context())
-
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.New("failed to get weekly leaderboard")
-	}
-
-	allTimeHighScores, err := s.rs.GetAllTimeHighScores(r.Context())
-
-	if err != nil {
-		return nil, http.StatusInternalServerError, errors.New("failed to get weekly leaderboard")
+		return nil, http.StatusInternalServerError, err
 	}
 
 	res := make(map[string]any)
