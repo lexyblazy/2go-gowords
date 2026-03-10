@@ -47,19 +47,27 @@ func NewRedisStore(url string) (*RedisStore, error) {
 	return &RedisStore{conn: rdb}, nil
 }
 
-func (rs *RedisStore) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
-	return rs.conn.Set(ctx, key, value, ttl).Err()
+func (rs *RedisStore) getSessionKey(sessionToken string) string {
+	return fmt.Sprintf("sessions:%s", sessionToken)
+}
+
+func (rs *RedisStore) GetSession(ctx context.Context, sessionToken string) (string, error) {
+	return rs.get(ctx, rs.getSessionKey(sessionToken))
+}
+
+func (rs *RedisStore) CreateSession(ctx context.Context, sessionToken string, userId string, ttl time.Duration) error {
+	return rs.conn.Set(ctx, rs.getSessionKey(sessionToken), userId, ttl).Err()
 }
 
 func (rs *RedisStore) CacheUserMoniker(ctx context.Context, userId string, moniker string) error {
 	return rs.conn.HSet(ctx, USERS_MONIKERS, userId, moniker).Err()
 }
 
-func (rs *RedisStore) Delete(ctx context.Context, key string) error {
-	return rs.conn.Del(ctx, key).Err()
+func (rs *RedisStore) DeleteSession(ctx context.Context, sessionToken string) error {
+	return rs.conn.Del(ctx, rs.getSessionKey(sessionToken)).Err()
 }
 
-func (rs *RedisStore) Get(ctx context.Context, key string) (string, error) {
+func (rs *RedisStore) get(ctx context.Context, key string) (string, error) {
 	val, err := rs.conn.Get(ctx, key).Result()
 
 	if err != nil {

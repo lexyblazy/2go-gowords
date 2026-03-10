@@ -168,3 +168,23 @@ func (s *SqlDb) UpdateUserStats(updates []UserStatsUpdate) error {
 func (s *SqlDb) Close() {
 	s.db.Close()
 }
+
+func (s *SqlDb) GetUserStats(userId string) (UserStatsEntity, error) {
+	var userStats UserStatsEntity
+
+	err := s.db.QueryRow(`select user_id, games_played, wins_count, best_score, total_score, created_at, updated_at from user_stats where user_id = ?`, userId).Scan(
+		&userStats.UserId,
+		&userStats.GamesPlayed,
+		&userStats.Wins,
+		&userStats.BestScore,
+		&userStats.TotalScore,
+		&userStats.CreatedAt,
+		&userStats.UpdatedAt,
+	)
+
+	if err != nil {
+		return userStats, err
+	}
+
+	return userStats, nil
+}
