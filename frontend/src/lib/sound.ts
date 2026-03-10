@@ -11,6 +11,15 @@ type SoundName =
 class SoundManager {
   private enabled = false;
   private sounds: Record<SoundName, HTMLAudioElement>;
+  private lastPlayedAt: Partial<Record<SoundName, number>> = {};
+  private cooldownMs: Partial<Record<SoundName, number>> = {
+    default: 200,
+    accepted: 75,
+    rejected: 75,
+    winner: 250,
+    over: 250,
+    beep: 0,
+  };
 
   constructor() {
     this.sounds = {
@@ -44,6 +53,15 @@ class SoundManager {
     if (!this.enabled) {
       return;
     }
+
+    const now = Date.now();
+    const cooldown = this.cooldownMs[name] ?? 0;
+    const last = this.lastPlayedAt[name] ?? 0;
+    if (cooldown > 0 && now - last < cooldown) {
+      return;
+    }
+    this.lastPlayedAt[name] = now;
+
     const sound = this.sounds[name];
     sound.currentTime = 0;
     sound.play().catch(() => {});
