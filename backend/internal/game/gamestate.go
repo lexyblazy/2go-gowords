@@ -81,16 +81,17 @@ func (gs *GameState) RefillRounds() {
 func (gs *GameState) PlayCurrentRound() {
 
 	roundDuration := time.Duration(gs.c.Game.RoundDurationSeconds) * time.Second
+	wordExpansionDuration := time.Duration(gs.c.Game.WordExpansionDurationSeconds) * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), roundDuration)
 	defer cancel()
 
 	go gs.BroadcastRoundInfoPeriodically(ctx)
 
-	// during the last 30 seconds of the round, the expansion word will be added to the words list
+	// during the last wordExpansionDuration of the round, the expansion word will be added to the words list
 	// and the valid words map will be updated to include the expansion word
 	go func(c context.Context) {
-		time.Sleep(roundDuration - 30*time.Second)
+		time.Sleep(roundDuration - wordExpansionDuration)
 		select {
 		case <-c.Done():
 			return
