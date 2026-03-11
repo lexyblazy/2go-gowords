@@ -1,5 +1,5 @@
 import type { FeedItem, RoundState, ServerEvent, BatchEvents } from "./types";
-import { getFeedItem, getNewState } from "./methods";
+import { applyBatchEvents, getFeedItem, getNewState } from "./methods";
 export interface AppState {
   connectionStatus: "connecting" | "connected" | "disconnected";
   playerName?: string;
@@ -55,9 +55,7 @@ export function reducer(
       };
     // batch events are used to reduce the number of re-renders
     case "BATCH_EVENTS":
-      return event.payload.reduce((acc, event) => {
-        return getNewState(acc, event);
-      }, state);
+      return applyBatchEvents(state, event.payload);
 
     default:
       return getNewState(state, event);

@@ -32,11 +32,11 @@ export const playSound = (event: ServerEvent) => {
     case "ROUND_OVER":
       soundManager.play("over");
       break;
-    case "ROUND_INFO":
-      // do nothing
+    case "GAME_RULES":
+      soundManager.play("default");
       break;
     default:
-      soundManager.play("default");
+      break;
   }
 };
 
@@ -198,8 +198,7 @@ export function getFeedItem(
     case "ROUND_INFO":
       return;
     default:
-      console.log("Unknown event: ", event);
-      return undefined;
+      return;
   }
 }
 
@@ -229,4 +228,66 @@ export function getNewState(state: AppState, event: ServerEvent): AppState {
   }
 
   return newState;
+}
+
+export function applyBatchEvents(
+  state: AppState,
+  events: ServerEvent[],
+): AppState {
+  let playerId = state.playerId;
+  let round = state.round;
+  let nextRoundStartsAt = state.nextRoundStartsAt;
+  let isRoundActive = state.isRoundActive;
+  let connectionStatus = state.connectionStatus;
+  let joinedRoom = state.joinedRoom;
+  let playerName = state.playerName;
+  let joinError = state.joinError;
+  let playerScore = state.playerScore;
+
+  const feed = state.feed.slice();
+
+  for (const event of events) {
+    playSound(event);
+
+    const item = getFeedItem(event, playerId);
+    if (item) {
+      feed.push(item);
+      if (feed.length > MAX_FEED_ITEMS) {
+        feed.splice(0, feed.length - MAX_FEED_ITEMS);
+      }
+    }
+
+    switch (event.type) {
+      case "ROUND_INFO":
+        round = {
+          words: event.payload.words,
+          validWordsCount: event.payload.validWordsCount,
+          endsAt: addDriftTime(event.payload.endsAt),
+        };
+        break;
+      case "ROUND_OVER":
+        round = undefined;
+        break;
+      case "NEXT_ROUND_COUNTDOWN":
+        nextRoundStartsAt = addDriftTime(event.payload.endsAt);
+        round = undefined;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return {
+    ...state,
+    connectionStatus,
+    joinedRoom,
+    playerId,
+    playerName,
+    joinError,
+    isRoundActive,
+    playerScore,
+    round,
+    nextRoundStartsAt,
+    feed,
+  };
 }
