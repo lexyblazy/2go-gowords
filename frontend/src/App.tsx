@@ -9,7 +9,8 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
-    initSocket(dispatch);
+    const cleanup = initSocket(dispatch);
+    return cleanup;
   }, []);
 
   return (
