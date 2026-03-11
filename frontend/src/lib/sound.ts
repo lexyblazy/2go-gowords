@@ -1,5 +1,3 @@
-// lib/sound.ts
-
 type SoundName =
   | "accepted"
   | "rejected"
@@ -20,6 +18,7 @@ class SoundManager {
     over: 250,
     beep: 0,
   };
+  private playInFlight: Partial<Record<SoundName, boolean>> = {};
 
   constructor() {
     this.sounds = {
@@ -33,6 +32,7 @@ class SoundManager {
 
     Object.values(this.sounds).forEach((audio) => {
       audio.volume = 0.5;
+      audio.preload = "auto";
     });
   }
 
@@ -42,10 +42,23 @@ class SoundManager {
 
   disable() {
     this.enabled = false;
+
+    Object.values(this.sounds).forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
   }
 
   toggle() {
     this.enabled = !this.enabled;
+
+    if (!this.enabled) {
+      Object.values(this.sounds).forEach((audio) => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    }
+
     return this.enabled;
   }
 
@@ -57,23 +70,43 @@ class SoundManager {
     const now = Date.now();
     const cooldown = this.cooldownMs[name] ?? 0;
     const last = this.lastPlayedAt[name] ?? 0;
+
     if (cooldown > 0 && now - last < cooldown) {
       return;
     }
+
+    if (this.playInFlight[name]) {
+      return;
+    }
+
     this.lastPlayedAt[name] = now;
 
     const sound = this.sounds[name];
-    sound.currentTime = 0;
-    sound.play().catch(() => {});
+
+    try {
+      sound.pause();
+      sound.currentTime = 0;
+
+      const maybePromise = sound.play();
+
+      if (maybePromise && typeof maybePromise.then === "function") {
+        this.playInFlight[name] = true;
+        maybePromise
+          .catch(() => {})
+          .finally(() => {
+            this.playInFlight[name] = false;
+          });
+      }
+    } catch {
+      this.playInFlight[name] = false;
+    }
   }
 
   stop(name: SoundName) {
-    if (!this.enabled) {
-      return;
-    }
     const sound = this.sounds[name];
     sound.pause();
     sound.currentTime = 0;
+    this.playInFlight[name] = false;
   }
 }
 
